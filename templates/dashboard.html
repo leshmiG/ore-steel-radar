@@ -151,6 +151,28 @@ h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%
 footer{border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;background:var(--surface)}
 footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 
+/* competitor picker */
+.compbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}
+.compbar .lbl{font:800 15px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel-mid)}
+.pick{appearance:none;cursor:pointer;border:1px solid var(--line-2);background:var(--surface);color:var(--steel);border-radius:999px;padding:7px 14px;font:600 13px var(--body);display:inline-flex;gap:8px;align-items:center}
+.pick:hover{border-color:var(--steel-mid)}
+.pick[aria-expanded="true"]{background:var(--steel);color:#fff;border-color:var(--steel)}
+.sel{display:inline-flex;align-items:center;gap:6px;background:#e9edf2;color:var(--steel);border-radius:999px;padding:5px 6px 5px 12px;font:600 12.5px var(--body)}
+.sel button{appearance:none;border:0;background:#fff;color:var(--steel-mid);width:20px;height:20px;border-radius:50%;cursor:pointer;font:600 12px var(--body);line-height:1}
+.linkbtn{appearance:none;border:0;background:none;color:var(--tail);font:600 13px var(--body);cursor:pointer;padding:4px}
+.picker{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;display:grid;gap:14px}
+.picker-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.picker-top input{flex:1 1 240px;font:14px var(--body);padding:9px 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);color:var(--ink);min-width:0}
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.group h4{margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:800 14px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel-mid)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.co{appearance:none;cursor:pointer;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink);border-radius:999px;padding:5px 11px;font:500 13px var(--body);display:inline-flex;gap:6px;align-items:center;transition:background .15s,border-color .15s}
+.co small{font:600 11px var(--mono);color:var(--muted)}
+.co.zero{color:var(--faint)}
+.co:hover{border-color:var(--steel-mid)}
+.co[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff}
+.co[aria-pressed="true"] small{color:#c9d1da}
+
 /* pop-in: starts visible, settles with a small overshoot, like a pellet dropping into place */
 @media (prefers-reduced-motion:no-preference){
   .pop{animation:pop .6s cubic-bezier(.2,.9,.25,1.25) both;animation-delay:var(--d,0ms)}
@@ -206,6 +228,18 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
     <p class="sub">Pick a leader to filter every call, chart and signal on this page.</p>
     <div class="leaders" role="group" aria-label="Leader" id="leaders"></div>
     <div class="remit" id="remit"></div>
+    <div class="compbar" id="compbar">
+      <span class="lbl">Competitors</span>
+      <button class="pick" id="pickBtn" aria-expanded="false" aria-controls="picker">Choose competitors</button>
+      <span id="selChips" style="display:contents"></span>
+    </div>
+    <div class="picker" id="picker" hidden>
+      <div class="picker-top">
+        <input id="coQ" type="search" placeholder="Search companies" aria-label="Search companies">
+        <div><button class="linkbtn" id="coClear">Clear all</button> <button class="pick" id="coDone">Done</button></div>
+      </div>
+      <div class="groups" id="groups"></div>
+    </div>
     <div class="top3" id="top3"></div>
   </div></section>
 
@@ -274,7 +308,15 @@ let ALL = DATA.items.slice();
 const state = {leader:"All", area:"All", region:"All", signal:"All", q:"", preset:String(DATA.default_days || 7),
   from:addDays(LAST, -((DATA.default_days || 7) - 1)), to:LAST};
 const inRange = x => x.date >= state.from && x.date <= state.to;
-const pool = () => ALL.filter(x => inRange(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
+/* competitor selection: a signal matches when it names a selected company (or mentions it in the headline) */
+const SEL = new Set();
+try { JSON.parse(localStorage.getItem("radar.competitors") || "[]").forEach(c => SEL.add(c)); } catch (e) {}
+const saveSel = () => { try { localStorage.setItem("radar.competitors", JSON.stringify([...SEL])); } catch (e) {} };
+const lc = s => String(s || "").toLowerCase();
+const word = (text, n) => new RegExp(`(^|[^a-z0-9])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z0-9])`).test(lc(text));
+const mentions = (x, name) => { const n = lc(name); return x.companies.some(c => lc(c) === n || word(c, n)) || word(x.title, n) || word(x.what_happened, n); };
+const matchCo = x => !SEL.size || [...SEL].some(n => mentions(x, n));
+const pool = () => ALL.filter(x => inRange(x) && matchCo(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
 
 async function ensureLoaded(){
   const need = DAYS.filter(d => d >= state.from && d <= state.to && !LOADED.has(d));
@@ -340,17 +382,62 @@ function renderHero(){
   const scanned = DAYS.filter(d => d >= state.from && d <= state.to).reduce((s, d) => s + (SCANNED[d] || 0), 0);
   const cos = new Set(p.flatMap(x => x.companies)).size;
   const balance = hw > tw ? `headwinds outnumber tailwinds <strong>${hw} to ${tw}</strong>` : tw > hw ? `tailwinds outnumber headwinds <strong>${tw} to ${hw}</strong>` : `tailwinds and headwinds are level at <strong>${tw} each</strong>`;
-  const who = state.leader === "All" ? "" : ` for the <strong>${state.leader}</strong>`;
+  const coNames = [...SEL];
+  const who = (state.leader === "All" ? "" : ` for the <strong>${state.leader}</strong>`) + (coNames.length ? ` on <strong>${esc(coNames.slice(0, 3).join(", "))}${coNames.length > 3 ? ` +${coNames.length - 3}` : ""}</strong>` : "");
   document.getElementById("lede").innerHTML = p.length
-    ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${act}</strong> need action now and ${balance}.`
+    ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${act}</strong> need${act === 1 ? "s" : ""} action now and ${balance}.`
     : `No signals${who} in this period. Try a longer period or another leader.`;
   const tiles = [["", scanned, "Headlines scanned"], ["", p.length, "Signals kept"], ["act", act, "Act now (8+)"],
     ["tail", tw, "▲ Tailwinds"], ["head", hw, "▼ Headwinds"], ["", cos, "Companies in the news"]];
   document.getElementById("kpis").innerHTML = tiles.map(([c, v, l], i) => `<div class="kpi pop ${c}" style="--d:${i * 60}ms"><b>${v}</b><span>${l}</span></div>`).join("");
 }
 
+const GROUP_LABEL = g => ({iron_ore_and_pellets:"Iron ore & pellets", steelmakers_china:"Steelmakers · China", steelmakers_asia_india:"Steelmakers · Asia & India",
+  steelmakers_europe_cis:"Steelmakers · Europe & CIS", steelmakers_americas:"Steelmakers · Americas", gcc_middle_east_africa:"GCC, Middle East & Africa",
+  green_steel_and_technology:"Green steel & technology"}[g] || g.replace(/_/g, " "));
+function companyGroups(){
+  const groups = Object.entries(DATA.competitor_groups || {});
+  const known = new Set(groups.flatMap(([, n]) => n.map(lc)));
+  const extra = [...new Set(ALL.flatMap(x => x.companies))].filter(c => ![...known].some(k => k.includes(lc(c)) || lc(c).includes(k))).sort();
+  if (extra.length) groups.push(["also_in_the_news", extra]);
+  return groups;
+}
+function renderPicker(){
+  const inP = ALL.filter(x => inRange(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
+  const q = lc(document.getElementById("coQ").value);
+  document.getElementById("groups").innerHTML = companyGroups().map(([g, names]) => {
+    const shown = names.filter(n => !q || lc(n).includes(q));
+    if (!shown.length) return "";
+    const counts = Object.fromEntries(shown.map(n => [n, inP.filter(x => mentions(x, n)).length]));
+    shown.sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+    return `<div class="group"><h4>${esc(g === "also_in_the_news" ? "Also in the news" : GROUP_LABEL(g))}<button class="linkbtn" data-all="${esc(g)}">Select all</button></h4>
+      <div class="chips">${shown.map(n => `<button class="co${counts[n] ? "" : " zero"}" aria-pressed="${SEL.has(n)}" data-co="${esc(n)}">${esc(n)}<small>${counts[n]}</small></button>`).join("")}</div></div>`;
+  }).join("") || `<div class="empty">No company matches that search.</div>`;
+  document.querySelectorAll("#groups .co").forEach(b => b.onclick = () => { const n = b.dataset.co; SEL.has(n) ? SEL.delete(n) : SEL.add(n); saveSel(); renderAll(); });
+  document.querySelectorAll("#groups [data-all]").forEach(b => b.onclick = () => {
+    const names = companyGroups().find(([g]) => g === b.dataset.all)[1].filter(n => !q || lc(n).includes(q));
+    const allOn = names.every(n => SEL.has(n)); names.forEach(n => allOn ? SEL.delete(n) : SEL.add(n)); saveSel(); renderAll();
+  });
+}
+function renderCompbar(){
+  document.getElementById("selChips").innerHTML = SEL.size
+    ? [...SEL].map(n => `<span class="sel">${esc(n)}<button aria-label="Remove ${esc(n)}" data-rm="${esc(n)}">×</button></span>`).join("") + `<button class="linkbtn" id="clearSel">Clear</button>`
+    : `<span class="remit" style="margin:0">All companies. Pick competitors to focus every view on them.</span>`;
+  document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { SEL.delete(b.dataset.rm); saveSel(); renderAll(); });
+  const c = document.getElementById("clearSel"); if (c) c.onclick = () => { SEL.clear(); saveSel(); renderAll(); };
+  document.getElementById("pickBtn").textContent = SEL.size ? `Competitors selected: ${SEL.size}` : "Choose competitors";
+  if (!document.getElementById("picker").hidden) renderPicker();
+}
+document.getElementById("pickBtn").onclick = () => {
+  const p = document.getElementById("picker"); p.hidden = !p.hidden;
+  document.getElementById("pickBtn").setAttribute("aria-expanded", !p.hidden); if (!p.hidden) { renderPicker(); document.getElementById("coQ").focus(); }
+};
+document.getElementById("coDone").onclick = () => { document.getElementById("picker").hidden = true; document.getElementById("pickBtn").setAttribute("aria-expanded", "false"); };
+document.getElementById("coClear").onclick = () => { SEL.clear(); saveSel(); renderAll(); };
+document.getElementById("coQ").oninput = renderPicker;
+
 function renderLeaders(){
-  const inP = ALL.filter(inRange);
+  const inP = ALL.filter(x => inRange(x) && matchCo(x));
   document.getElementById("leaders").innerHTML = ["All", ...Object.keys(DATA.leaders)].map(l => {
     const n = l === "All" ? inP.length : inP.filter(x => x.leaders.includes(l)).length;
     return `<button class="lead" aria-pressed="${state.leader === l}" data-l="${l}">${l === "All" ? "Everyone" : l}<small>${n}</small></button>`;
@@ -512,7 +599,7 @@ function renderFeed(){
     </div></article>`).join("");
 }
 
-function renderAll(){ renderLeaders(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
+function renderAll(){ renderCompbar(); renderLeaders(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
 
 if (window.Chart) {
   Chart.defaults.color = C.muted; Chart.defaults.borderColor = C.line; Chart.defaults.font.family = MONO; Chart.defaults.font.size = 11;

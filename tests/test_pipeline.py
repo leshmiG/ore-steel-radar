@@ -92,5 +92,5 @@ def test_demo_builds(tmp_path):
     cfg = make_cfg(tmp_path)
     html_path, md_path = radar.demo(cfg)
     page = html_path.read_text(encoding="utf-8")
-    assert "LKAB" in page and '"2026-10-30"' in page
+    assert "LKAB" in page and '"2026-10-30"' in page and "competitor_groups" in page
     assert "## CFO" in md_path.read_text(encoding="utf-8")

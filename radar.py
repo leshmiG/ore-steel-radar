@@ -407,7 +407,7 @@ def write_reports(cfg, scanned_by_day, items, days, note=""):
     inline = [x for x in items if x["date"] >= start]
     data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
             "default_days": days, "day_list": day_list, "inline_days": inline_days,
-            "companies_tracked": len(cfg["companies"]), "leaders": cfg["leaders"], "areas": cfg["watch_areas"],
+            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "leaders": cfg["leaders"], "areas": cfg["watch_areas"],
             "regions": cfg["regions"], "items": inline, "note": note}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))

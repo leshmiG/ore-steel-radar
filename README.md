@@ -39,7 +39,7 @@ Paywalled sites (Fastmarkets, Argus, S&P Global, Kallanish) are read through the
   price moves of Vale, Rio Tinto, BHP, ArcelorMittal, Nucor, POSCO and others.
 - **Function tabs** (Governance & Strategy, Finance & Risk, Supply Chain, Innovation & Research) that filter every
   number, chart and signal, and a **competitor picker** to focus on chosen companies.
-- **Top 3 calls**, then charts: trending hashtags, pressure by watch area, companies in the news and regions. Every
+- **Top 3 calls**, then charts: pressure by watch area, companies in the news and regions. Every
   chart has a table view.
 - **All signals** shows impact 7 and above by default; filters for impact, hashtag, watch area, region, verification,
   tailwind/headwind and search. Every signal carries a verification badge and links to all outlets that reported it.

@@ -299,7 +299,6 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
     <h2>The picture</h2>
     <p class="sub" id="chartsSub"></p>
     <div class="charts">
-      <article class="panel wide" id="p-tags"><header><div><h3>Trending hashtags</h3><p class="insight" id="i-tags"></p></div><button class="tbtn" data-t="tags">Table</button></header><div class="canvas-box" style="height:280px"><canvas id="c-tags" role="img" aria-label="Most used hashtags in the period"></canvas></div><div class="tablewrap" hidden id="t-tags"></div></article>
       <article class="panel" id="p-area"><header><div><h3>Where the pressure is</h3><p class="insight" id="i-area"></p></div><button class="tbtn" data-t="area">Table</button></header><div class="canvas-box tall"><canvas id="c-area" role="img" aria-label="Total impact by watch area"></canvas></div><div class="tablewrap" hidden id="t-area"></div></article>
       <article class="panel" id="p-companies"><header><div><h3>Who's making news</h3><p class="insight" id="i-companies"></p></div><button class="tbtn" data-t="companies">Table</button></header><div class="canvas-box"><canvas id="c-companies" role="img" aria-label="Companies with the most signals"></canvas></div><div class="tablewrap" hidden id="t-companies"></div></article>
       <article class="panel wide" id="p-regions"><header><div><h3>Where it's happening</h3><p class="insight" id="i-regions"></p></div><button class="tbtn" data-t="regions">Table</button></header><div class="canvas-box" style="height:260px"><canvas id="c-regions" role="img" aria-label="Signals by region"></canvas></div><div class="tablewrap" hidden id="t-regions"></div></article>
@@ -556,16 +555,6 @@ function renderCharts(){
   const p = pool();
   const grid = {color:C.line, drawTicks:false}, ticks = {color:C.muted, font:{family:MONO, size:11}, padding:6};
   document.getElementById("chartsSub").textContent = `${p.length} signals${state.leader === "All" ? "" : " for " + DATA.functions[state.leader].name}, ${document.getElementById("rangeLabel").textContent}.`;
-
-  // Trending hashtags
-  const tr = trending().sort((a, b) => b.n - a.n || b.rise - a.rise).slice(0, 12);
-  const riser = [...tr].sort((a, b) => b.rise - a.rise)[0];
-  document.getElementById("i-tags").innerHTML = tr.length ? `Most used: <b>${esc(tr[0].tag)}</b> (${tr[0].n} signals).${riser && riser.prev ? ` Fastest rising: <b>${esc(riser.tag)}</b> (+${riser.rise} vs the previous period).` : ""} Hashtags come from the news itself, not social media.` : "No hashtags in this period.";
-  upsert("tags", "bar", {labels:tr.map(t => t.tag), datasets:[{label:"Signals", data:tr.map(t => t.n), backgroundColor:tr.map(t => t.tag === "#StraitOfHormuz" ? C.head : C.steelMid), borderRadius:4, borderSkipped:false, barThickness:14}]},
-    baseOpts({indexAxis:"y", scales:{x:{grid, ticks:{...ticks, precision:0}}, y:{grid:{display:false}, ticks:{...ticks, color:C.ink}}},
-      plugins:{legend:legend(false), tooltip:{...tip, callbacks:{label:c => { const t = tr[c.dataIndex]; return `${t.n} signals · ${t.prev} in the previous period`; }}}},
-      onClick:(e, els) => { if (els.length) { state.tag = tr[els[0].index].tag; renderTop10(); document.querySelector(".hero").scrollIntoView({behavior:REDUCED ? "auto" : "smooth"}); } }}));
-  setTable("tags", ["Hashtag", "Signals", "Previous period", "Change"], tr.map(t => [t.tag, t.n, t.prev, (t.rise > 0 ? "+" : "") + t.rise]));
 
   // Pressure by watch area (radar)
   const areaSum = DATA.areas.map(a => p.filter(x => x.watch_area === a).reduce((s, x) => s + x.impact, 0));

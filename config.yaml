@@ -198,6 +198,14 @@ site_watch:
   - splash247.com
   - lloydslist.com
   - tradewindsnews.com
+  - gcaptain.com
+  - maritime-executive.com
+  - safety4sea.com
+  - seatrade-maritime.com
+  - windward.ai
+  - kpler.com
+  - vortexa.com
+  - ukmto.org
   # global business news
   - reuters.com
   - bloomberg.com
@@ -241,6 +249,9 @@ source_tiers:
     - asx.com.au
     - europa.eu
     - iea.org
+    - ukmto.org
+    - imo.org
+    - imf.org
   tier1:      # price reporters and major wires
     - reuters.com
     - bloomberg.com
@@ -288,6 +299,13 @@ source_tiers:
     - cnn.com
     - lloydslist.com
     - tradewindsnews.com
+    - gcaptain.com
+    - maritime-executive.com
+    - safety4sea.com
+    - seatrade-maritime.com
+    - windward.ai
+    - kpler.com
+    - vortexa.com
 
 # Market data (free, no API key). Fetched each run; the dashboard hides the panel if a source is unavailable.
 markets:
@@ -308,6 +326,23 @@ markets:
     - {symbol: pkx.us, name: POSCO}
     - {symbol: tx.us, name: Ternium}
     - {symbol: ggb.us, name: Gerdau}
+
+# GDELT DOC API: global news monitoring (also used by OSINT tools such as God's Eye View). Free, no key.
+gdelt_queries:
+  - '"iron ore"'
+  - '"steel plant" OR "steel mill"'
+  - '"iron ore pellets" OR "pellet plant"'
+  - '"direct reduced iron" OR "green steel"'
+  - '"Strait of Hormuz" (shipping OR tanker OR vessel)'
+
+# Strait of Hormuz watch: daily transits from IMF PortWatch (chokepoint6), plus vessels holding offshore,
+# war-risk insurance and incidents from the Straits.live OSINT aggregator. Baseline = median daily transits
+# over the pre-crisis window below.
+hormuz:
+  chokepoint: chokepoint6
+  baseline_from: "2025-02-28"
+  baseline_to: "2026-02-27"
+  chart_days: 180
 
 # Extra RSS feeds (check each site's terms before automating)
 feeds:

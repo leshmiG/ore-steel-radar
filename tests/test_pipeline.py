@@ -166,3 +166,49 @@ def test_backfill_windows_and_dedupe(tmp_path):
 def test_legacy_functions_map_to_new_tabs(tmp_path):
     cfg = make_cfg(tmp_path)
     assert radar.norm_functions(["CEO", "CFO", "SMO", "CPO", "CTO", "XYZ"], cfg) == ["GOV", "FIN", "SCM", "INN"]
+
+
+def test_hormuz_portwatch_down_falls_back_to_mirror(tmp_path, monkeypatch):
+    cfg = make_cfg(tmp_path)
+    monkeypatch.setattr(radar, "ROOT", tmp_path)
+    days = [f"2025-{m:02d}-{d:02d}" for m in range(3, 13) for d in (1, 15)] + [f"2026-10-{d:02d}" for d in range(19, 26)]
+    rows = "date,n_total,n_tanker,n_cargo\n" + "\n".join(
+        f"{d},{80 if d < '2026' else 3},{40 if d < '2026' else 1},{40 if d < '2026' else 2}" for d in days)
+
+    def fake(url, timeout=30):
+        if "arcgis" in url:
+            return '{"error":{"code":400,"message":"Cannot perform query."}}'
+        if url.endswith("/data/transits.csv"):
+            return rows
+        if url.endswith("/status"):
+            return '{"verdict":{"short":"closed"},"ships":{"strandedOffshore":124,"stranded":862}}'
+        if "insurance" in url:
+            return '{"asOf":"2026-10-07","data":{"warRiskMultiple":32}}'
+        if url.endswith("/data/events.csv"):
+            return 'occurred_at_iso,type,title,source_url\n2026-11-02T08:43:06.000Z,strike,"LNG tanker attacked",https://example.com/a\n'
+        raise OSError(url)
+
+    monkeypatch.setattr(radar, "fetch_text", fake)
+    h = radar.fetch_hormuz(cfg)
+    assert h["transit_source"] == "IMF PortWatch via Straits.live"
+    assert h["baseline"] == 80 and h["ma7"] == 3.0 and h["pct_of_baseline"] == 4
+    assert h["holding_offshore"] == 124 and h["war_risk_multiple"] == 32 and h["verdict"] == "closed"
+    assert h["events"][0]["type"] == "strike" and h["events"][0]["at"] == "2026-11-02 08:43"
+    monkeypatch.setattr(radar, "fetch_text", lambda url, timeout=30: (_ for _ in ()).throw(OSError("offline")))
+    again = radar.fetch_hormuz(cfg)                       # everything down: keep last good values
+    assert again["ma7"] == 3.0 and again["holding_offshore"] == 124 and again["events"]
+
+
+def test_portwatch_parses_vessel_types(monkeypatch):
+    feat = {"features": [{"attributes": {"date": 1761350400000, "n_total": 5, "n_tanker": 2, "n_dry_bulk": 1,
+                                         "n_container": 1, "n_general_cargo": 1, "n_roro": 0}}]}
+    monkeypatch.setattr(radar, "fetch_text", lambda url, timeout=30: json.dumps(feat))
+    rows, src = radar.portwatch_transits("chokepoint6", "2025-01-01")
+    assert src == "IMF PortWatch" and rows == [{"date": "2025-10-25", "total": 5, "tanker": 2, "dry_bulk": 1, "other": 2}]
+
+
+def test_gdelt_records(monkeypatch):
+    payload = {"articles": [{"url": "https://www.mining.com/x", "title": "Iron ore slips", "seendate": "20261102T091500Z", "domain": "mining.com"}]}
+    monkeypatch.setattr(radar, "fetch_text", lambda url, timeout=30: json.dumps(payload))
+    recs = list(radar.gdelt_records('"iron ore"'))
+    assert recs[0]["published"] == "2026-11-02" and recs[0]["domain"] == "mining.com" and recs[0]["title"] == "Iron ore slips"

@@ -169,6 +169,27 @@ h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%
 footer{border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;background:var(--surface)}
 footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 
+/* Strait of Hormuz watch */
+.hz-status{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:14px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--head);border-radius:var(--radius);box-shadow:var(--shadow)}
+.hz-status p{margin:0;font-size:15.5px;max-width:90ch}
+.verdict{font:800 15px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--head);padding:6px 10px;border-radius:6px}
+.verdict.open{background:#2f7d4f}.verdict.restricted{background:var(--heat-watch)}
+.hz-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px}
+@media (max-width:900px){.hz-grid{grid-template-columns:1fr}}
+.hz-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:14px}
+.hz-tiles .kpi small{display:block;font:11px var(--mono);color:var(--faint);margin-top:4px;text-transform:none;letter-spacing:0}
+.inc{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.inc li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:9px 0;border-top:1px solid var(--line);align-items:start}
+.inc li:first-child{border-top:0}
+.inc .ty{font:700 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-top:2px}
+.ty.strike{color:#fff;background:var(--head)}.ty.closure{color:#fff;background:var(--heat-watch)}.ty.negotiation{color:#1d5fae;background:#e6f0fb}
+.ty.other{color:var(--steel);background:#eef1f4}
+.inc a{color:var(--ink);text-decoration:none;font-weight:600;font-size:13.5px;line-height:1.35}
+.inc a:hover{color:var(--tail)}
+.inc time{grid-column:2;font:11.5px var(--mono);color:var(--muted)}
+.hz-src{font-size:12.5px;color:var(--faint);margin-top:10px}
+.hz-src a{color:var(--muted)}
+
 /* market pulse */
 .mkts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:18px}
 .mk{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 10px;box-shadow:var(--shadow);display:grid;gap:4px}
@@ -269,6 +290,17 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 </section>
 
 <main>
+  <section class="section gutter" id="hormuzSec" hidden><div class="inner">
+    <h2>Strait of Hormuz watch</h2>
+    <p class="sub">Daily vessel transits, ships holding offshore, war-risk insurance and the latest incidents.</p>
+    <div class="hz-status" id="hzStatus"></div>
+    <div class="hz-tiles" id="hzTiles"></div>
+    <div class="hz-grid">
+      <article class="panel" id="p-hz"><header><div><h3>Daily transits through the strait</h3><p class="insight" id="i-hz"></p></div><button class="tbtn" data-t="hz">Table</button></header><div class="canvas-box" style="height:420px"><canvas id="c-hz" role="img" aria-label="Daily vessel transits through the Strait of Hormuz against the pre-crisis level"></canvas></div><div class="tablewrap" hidden id="t-hz"></div></article>
+      <article class="panel"><header><div><h3>Latest incidents</h3><p class="insight">Strikes, closures and negotiations, newest first.</p></div></header><ul class="inc" id="hzEvents"></ul></article>
+    </div>
+    <p class="hz-src" id="hzSrc"></p>
+  </div></section>
   <section class="section gutter" id="marketSec" hidden><div class="inner">
     <h2>Market pulse</h2>
     <p class="sub" id="mkSub"></p>
@@ -679,6 +711,44 @@ function renderTop10(){
     : `<li style="display:block">No news for this hashtag in the period.</li>`;
 }
 
+/* ---------- Strait of Hormuz watch */
+function renderHormuz(){
+  const h = DATA.hormuz || {};
+  if (!h.series || !h.series.length) return;
+  document.getElementById("hormuzSec").hidden = false;
+  const v = (h.verdict || "").toLowerCase(), vcls = v.includes("open") && !v.includes("re") ? "open" : v.includes("restrict") || v.includes("partial") ? "restricted" : "";
+  const fmtD = d => fmt(d, true);
+  document.getElementById("hzStatus").innerHTML = `${h.verdict ? `<span class="verdict ${vcls}">${esc(h.verdict)}</span>` : ""}
+    <p>Commercial transits are running at <strong>${h.pct_of_baseline ?? "–"}%</strong> of the pre-crisis level: <strong>${h.ma7 ?? "–"}</strong> a day over the last 7 days against a median of <strong>${h.baseline ?? "–"}</strong> (${fmtD(h.baseline_window[0])} – ${fmtD(h.baseline_window[1])}).</p>`;
+  const tiles = [
+    [h.ma7, "Transits a day (7-day avg)", `vs ${h.baseline} before the crisis`],
+    [h.pct_of_baseline != null ? h.pct_of_baseline + "%" : null, "Of pre-crisis traffic", ""],
+    [h.latest ? h.latest.total : null, "Transits on latest day", h.latest ? `${fmtD(h.latest.date)}${h.latest.date >= addDays(DATA.today, -3) ? " · provisional" : ""}` : ""],
+    [h.dry_bulk_ma7, "Dry bulk a day (7-day avg)", "ore, pellets, coal, grain"],
+    [h.holding_offshore, "Vessels holding offshore", "AIS, away from working ports"],
+    [h.war_risk_multiple != null ? "×" + h.war_risk_multiple : null, "War-risk insurance", h.insurance_as_of ? `vs peacetime · estimate of ${fmtD(h.insurance_as_of)}` : "vs peacetime"]];
+  document.getElementById("hzTiles").innerHTML = tiles.filter(t => t[0] != null).map(([val, l, sub], i) => `<div class="kpi pop" style="--d:${i * 60}ms"><b>${esc(val)}</b><span>${l}</span>${sub ? `<small>${esc(sub)}</small>` : ""}</div>`).join("");
+  const s = h.series, hasDry = s.some(r => r.dry_bulk != null);
+  const ma = s.map((r, i) => { const w = s.slice(Math.max(0, i - 6), i + 1); return +(w.reduce((a, x) => a + x.total, 0) / w.length).toFixed(1); });
+  const peak = s.reduce((m, r) => r.total > m.total ? r : m, s[0]);
+  document.getElementById("i-hz").innerHTML = `Highest in the window: <b>${peak.total}</b> on ${fmtD(peak.date)}. Latest 7-day average: <b>${h.ma7}</b> a day. Dashed line: pre-crisis median (${h.baseline}).`;
+  const sets = [{type:"bar", label:"Tankers", data:s.map(r => r.tanker), backgroundColor:C.steel, stack:"t", borderRadius:2, maxBarThickness:10}];
+  if (hasDry) sets.push({type:"bar", label:"Dry bulk", data:s.map(r => r.dry_bulk || 0), backgroundColor:C.watch, stack:"t", borderRadius:2, maxBarThickness:10});
+  sets.push({type:"bar", label:hasDry ? "Other cargo" : "Cargo ships", data:s.map(r => r.other), backgroundColor:css("--steel-light"), stack:"t", borderRadius:2, maxBarThickness:10},
+    {type:"line", label:"7-day average", data:ma, stack:"avg", borderColor:C.tail, backgroundColor:C.tail, borderWidth:2, pointRadius:0, tension:.3},
+    {type:"line", label:"Pre-crisis median", data:s.map(() => h.baseline), stack:"base", borderColor:C.head, borderDash:[6, 5], borderWidth:1.5, pointRadius:0});
+  upsert("hz", "bar", {labels:s.map(r => fmt(r.date)), datasets:sets},
+    baseOpts({scales:{x:{stacked:true, grid:{display:false}, ticks:{color:C.muted, font:{family:MONO, size:11}, maxRotation:0, autoSkip:true, maxTicksLimit:10}},
+      y:{stacked:true, beginAtZero:true, grid:{color:C.line, drawTicks:false}, ticks:{color:C.muted, font:{family:MONO, size:11}, padding:6, precision:0}}},
+      interaction:{mode:"index", intersect:false}, plugins:{legend:legend(true), tooltip:tip}}));
+  setTable("hz", ["Day", "Total", "Tankers", ...(hasDry ? ["Dry bulk"] : []), hasDry ? "Other cargo" : "Cargo ships", "7-day avg"],
+    s.map((r, i) => [r.date, r.total, r.tanker, ...(hasDry ? [r.dry_bulk] : []), r.other, ma[i]]).reverse());
+  const typ = t => ["strike", "closure", "negotiation"].includes(t) ? t : "other";
+  document.getElementById("hzEvents").innerHTML = (h.events || []).slice(0, 8).map(e => `<li><span class="ty ${typ(e.type)}">${esc(e.type || "event")}</span>
+    <a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.title)}</a><time>${esc(e.at)} UTC</time></li>`).join("") || `<li>No incidents reported.</li>`;
+  document.getElementById("hzSrc").innerHTML = `Transits: <a href="https://portwatch.imf.org/" target="_blank" rel="noopener">IMF PortWatch</a> (satellite AIS; latest days are provisional)${h.transit_source && h.transit_source.includes("Straits") ? ", via the Straits.live mirror" : ""}. Vessels holding, insurance and incidents: <a href="https://straits.live/" target="_blank" rel="noopener">Straits.live</a>, an OSINT aggregator; each incident links to its source. ${h.demo_note ? esc(h.demo_note) : `Updated ${fmtD((h.fetched || "").slice(0, 10))}.`}`;
+}
+
 function renderAll(){ renderCompbar(); renderLeaders(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
 
 if (window.Chart) {
@@ -687,6 +757,7 @@ if (window.Chart) {
   document.querySelectorAll(".canvas-box").forEach(b => b.innerHTML = `<div class="nochart">Charts could not load. Use the Table button.</div>`);
 }
 setPreset(state.preset);
+renderHormuz();
 renderMarkets();
 
 /* ---------- 3D hero: grey iron ore pellets and polished steel billets orbit a steel core.

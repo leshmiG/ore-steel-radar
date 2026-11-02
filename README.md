@@ -8,7 +8,8 @@ Innovation & Research**. No company details needed. It also watches the **Strait
 with hashtags so you can see what is trending.
 
 ```
-Google News searches, 36 industry websites and RSS feeds (~85 sources) + FRED/Stooq market data
+Google News searches, 46 industry and maritime websites, GDELT global news and RSS feeds (~100 sources)
+  + FRED/Stooq market data + IMF PortWatch and Straits.live Strait of Hormuz shipping data
   -> keyword pre-filter -> dedupe (one story from many outlets = 1 signal, every outlet recorded)
   -> triage with a fast model (drops off-topic headlines cheaply)
   -> Claude analysis: watch area, region, companies, tailwind/headwind, impact 1-10, confidence, so what, action, leaders
@@ -28,6 +29,18 @@ Google News searches, 36 industry websites and RSS feeds (~85 sources) + FRED/St
 
 Paywalled sites (Fastmarkets, Argus, S&P Global, Kallanish) are read through their public headlines and snippets only.
 
+## Strait of Hormuz watch
+
+| Data | Source | Notes |
+| --- | --- | --- |
+| Daily transits by vessel type (tankers, dry bulk, other cargo) | [IMF PortWatch](https://portwatch.imf.org/), chokepoint6 (satellite AIS) | Free, no key. Latest 3 days are provisional. If the PortWatch service is down, the radar uses the same series mirrored by Straits.live. |
+| Pre-crisis baseline | Median daily transits, 28 Feb 2025 to 27 Feb 2026 | Change the window under `hormuz` in `config.yaml`. |
+| Vessels holding offshore, war-risk insurance, latest incidents | [Straits.live](https://straits.live/) OSINT aggregator (free tier) | Insurance is a curated estimate and can be stale; each incident links to its source. |
+| Hormuz news | Google News, GDELT, UKMTO/JMIC, maritime press (gCaptain, Lloyd's List, TradeWinds, Maritime Executive, Windward, Kpler, Vortexa) | Flows into the signals with the `#StraitOfHormuz` hashtag. |
+
+Open-source intelligence tools such as God's Eye View draw on the same public feeds (AIS, GDELT, news RSS); the radar
+uses those feeds directly so the figures can be checked and archived.
+
 ## What the dashboard shows
 
 - **Date filters** in the top bar: Day, 7 days, 30 days, All, or a custom range, with arrows to step back through
@@ -35,6 +48,8 @@ Paywalled sites (Fastmarkets, Argus, S&P Global, Kallanish) are read through the
 - **Top 10 · trending** beside the headline: the top 10 news for the selected hashtag. Hashtags are ranked by how much
   they grew against the previous period; `#StraitOfHormuz` is always shown (`pinned_hashtags` in `config.yaml`).
   Hashtags come from the news itself, not from social media.
+- **Strait of Hormuz watch:** status, transits against the pre-crisis level, vessels holding offshore, war-risk
+  insurance, a daily transit chart by vessel type and the latest incidents.
 - **Market pulse:** iron ore, Australian coal, European gas, US steel PPI and Brent prices with sparklines, plus share
   price moves of Vale, Rio Tinto, BHP, ArcelorMittal, Nucor, POSCO and others.
 - **Function tabs** (Governance & Strategy, Finance & Risk, Supply Chain, Innovation & Research) that filter every
@@ -114,7 +129,7 @@ For Amazon Bedrock instead of the Anthropic API, set `llm_provider: bedrock`, `b
 | Command | What it does |
 | --- | --- |
 | `python radar.py run` | Collect, analyse and report: the daily job |
-| `python radar.py collect` / `analyse` / `markets` / `report` | Run one step |
+| `python radar.py collect` / `analyse` / `markets` / `report` | Run one step (`markets` also refreshes the Hormuz watch) |
 | `python radar.py report --days 30` | Dashboard for the last 30 days |
 | `python radar.py serve [--daily 06:30]` | Host `docs/` on port 8000, optionally refreshing daily |
 | `python radar.py demo` | Build the dashboard from the demo data |

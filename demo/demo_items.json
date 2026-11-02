@@ -1273,5 +1273,985 @@
    "published": "",
    "coverage": 1
   }
- ]
+ ],
+ "hormuz": {
+  "fetched": "2026-11-02T12:00:00+00:00",
+  "baseline_window": [
+   "2025-02-28",
+   "2026-02-27"
+  ],
+  "transit_source": "IMF PortWatch via Straits.live",
+  "series": [
+   {
+    "date": "2026-06-18",
+    "total": 20,
+    "tanker": 10,
+    "dry_bulk": null,
+    "other": 10
+   },
+   {
+    "date": "2026-06-19",
+    "total": 9,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 6
+   },
+   {
+    "date": "2026-06-20",
+    "total": 25,
+    "tanker": 12,
+    "dry_bulk": null,
+    "other": 13
+   },
+   {
+    "date": "2026-06-21",
+    "total": 6,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-06-22",
+    "total": 16,
+    "tanker": 12,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-06-23",
+    "total": 29,
+    "tanker": 12,
+    "dry_bulk": null,
+    "other": 17
+   },
+   {
+    "date": "2026-06-24",
+    "total": 51,
+    "tanker": 20,
+    "dry_bulk": null,
+    "other": 31
+   },
+   {
+    "date": "2026-06-25",
+    "total": 46,
+    "tanker": 21,
+    "dry_bulk": null,
+    "other": 25
+   },
+   {
+    "date": "2026-06-26",
+    "total": 30,
+    "tanker": 17,
+    "dry_bulk": null,
+    "other": 13
+   },
+   {
+    "date": "2026-06-27",
+    "total": 25,
+    "tanker": 9,
+    "dry_bulk": null,
+    "other": 16
+   },
+   {
+    "date": "2026-06-28",
+    "total": 16,
+    "tanker": 7,
+    "dry_bulk": null,
+    "other": 9
+   },
+   {
+    "date": "2026-06-29",
+    "total": 26,
+    "tanker": 13,
+    "dry_bulk": null,
+    "other": 13
+   },
+   {
+    "date": "2026-06-30",
+    "total": 16,
+    "tanker": 6,
+    "dry_bulk": null,
+    "other": 10
+   },
+   {
+    "date": "2026-07-01",
+    "total": 29,
+    "tanker": 18,
+    "dry_bulk": null,
+    "other": 11
+   },
+   {
+    "date": "2026-07-02",
+    "total": 28,
+    "tanker": 15,
+    "dry_bulk": null,
+    "other": 13
+   },
+   {
+    "date": "2026-07-03",
+    "total": 24,
+    "tanker": 17,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-07-04",
+    "total": 17,
+    "tanker": 8,
+    "dry_bulk": null,
+    "other": 9
+   },
+   {
+    "date": "2026-07-05",
+    "total": 22,
+    "tanker": 16,
+    "dry_bulk": null,
+    "other": 6
+   },
+   {
+    "date": "2026-07-06",
+    "total": 25,
+    "tanker": 16,
+    "dry_bulk": null,
+    "other": 9
+   },
+   {
+    "date": "2026-07-07",
+    "total": 26,
+    "tanker": 10,
+    "dry_bulk": null,
+    "other": 16
+   },
+   {
+    "date": "2026-07-08",
+    "total": 20,
+    "tanker": 8,
+    "dry_bulk": null,
+    "other": 12
+   },
+   {
+    "date": "2026-07-09",
+    "total": 10,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-07-10",
+    "total": 7,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-11",
+    "total": 6,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-12",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-13",
+    "total": 10,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 8
+   },
+   {
+    "date": "2026-07-14",
+    "total": 8,
+    "tanker": 5,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-15",
+    "total": 9,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 6
+   },
+   {
+    "date": "2026-07-16",
+    "total": 6,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-07-17",
+    "total": 1,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-07-18",
+    "total": 6,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-07-19",
+    "total": 4,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-07-20",
+    "total": 5,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-21",
+    "total": 6,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-07-22",
+    "total": 6,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-07-23",
+    "total": 0,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-07-24",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-25",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-07-26",
+    "total": 3,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-07-27",
+    "total": 5,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-07-28",
+    "total": 5,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-07-29",
+    "total": 7,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-07-30",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-07-31",
+    "total": 8,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 6
+   },
+   {
+    "date": "2026-08-01",
+    "total": 5,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-02",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-08-03",
+    "total": 6,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-08-04",
+    "total": 7,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-08-05",
+    "total": 5,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-08-06",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-07",
+    "total": 6,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-08",
+    "total": 10,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 8
+   },
+   {
+    "date": "2026-08-09",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-08-10",
+    "total": 4,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-11",
+    "total": 9,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-08-12",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-13",
+    "total": 6,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-08-14",
+    "total": 7,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-08-15",
+    "total": 1,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-08-16",
+    "total": 1,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-08-17",
+    "total": 4,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-08-18",
+    "total": 6,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-19",
+    "total": 6,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-20",
+    "total": 5,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-08-21",
+    "total": 4,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-22",
+    "total": 7,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 6
+   },
+   {
+    "date": "2026-08-23",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-24",
+    "total": 3,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-08-25",
+    "total": 4,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-08-26",
+    "total": 5,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-08-27",
+    "total": 2,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-08-28",
+    "total": 7,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-08-29",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-08-30",
+    "total": 6,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-08-31",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-01",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-09-02",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-03",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-04",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-05",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-06",
+    "total": 6,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-09-07",
+    "total": 5,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-09-08",
+    "total": 6,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-09-09",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-09-10",
+    "total": 5,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-09-11",
+    "total": 8,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-09-12",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-13",
+    "total": 8,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-09-14",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-15",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-16",
+    "total": 1,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-17",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-09-18",
+    "total": 7,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-09-19",
+    "total": 6,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-09-20",
+    "total": 1,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-21",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-22",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-23",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-09-24",
+    "total": 5,
+    "tanker": 3,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-25",
+    "total": 3,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-26",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-09-27",
+    "total": 1,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-09-28",
+    "total": 4,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-09-29",
+    "total": 1,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-09-30",
+    "total": 4,
+    "tanker": 4,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-10-01",
+    "total": 0,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-10-02",
+    "total": 4,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-10-03",
+    "total": 2,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-10-04",
+    "total": 4,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-10-05",
+    "total": 8,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-10-06",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-10-07",
+    "total": 6,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 5
+   },
+   {
+    "date": "2026-10-08",
+    "total": 4,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-10-09",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-10-10",
+    "total": 4,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-10-11",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-10-12",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-10-13",
+    "total": 7,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 7
+   },
+   {
+    "date": "2026-10-14",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-10-15",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-10-16",
+    "total": 7,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 6
+   },
+   {
+    "date": "2026-10-17",
+    "total": 0,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 0
+   },
+   {
+    "date": "2026-10-18",
+    "total": 4,
+    "tanker": 2,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-10-19",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-10-20",
+    "total": 3,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 2
+   },
+   {
+    "date": "2026-10-21",
+    "total": 3,
+    "tanker": 0,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-10-22",
+    "total": 4,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 3
+   },
+   {
+    "date": "2026-10-23",
+    "total": 5,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 4
+   },
+   {
+    "date": "2026-10-24",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   },
+   {
+    "date": "2026-10-25",
+    "total": 2,
+    "tanker": 1,
+    "dry_bulk": null,
+    "other": 1
+   }
+  ],
+  "latest": {
+   "date": "2026-10-25",
+   "total": 2,
+   "tanker": 1,
+   "dry_bulk": null,
+   "other": 1
+  },
+  "ma7": 3.3,
+  "dry_bulk_ma7": null,
+  "baseline": 85,
+  "pct_of_baseline": 4,
+  "holding_offshore": 124,
+  "verdict": "closed",
+  "war_risk_multiple": 32,
+  "insurance_as_of": "2026-10-07",
+  "events": [
+   {
+    "at": "2026-11-02 11:25",
+    "type": "negotiation",
+    "title": "Iran Offers Two-Day Strait of Hormuz Reopening If U.S. Accepts Demands, Trump Threatens Decisive Strike",
+    "link": "https://straits.live/data/events.csv"
+   },
+   {
+    "at": "2026-11-02 11:00",
+    "type": "negotiation",
+    "title": "Iran offers 48-hour Hormuz reopening plan as Trump signals progress in talks",
+    "link": "https://www.hellenicshippingnews.com/iran-offers-48-hour-hormuz-reopening-plan-as-trump-signals-progress-in-talks/"
+   },
+   {
+    "at": "2026-11-02 11:00",
+    "type": "closure",
+    "title": "Iraq risks 80% oil revenue loss in renewed Hormuz closure",
+    "link": "https://www.hellenicshippingnews.com/iraq-risks-80-oil-revenue-loss-in-renewed-hormuz-closure/"
+   },
+   {
+    "at": "2026-11-02 10:56",
+    "type": "closure",
+    "title": "\"Ball is in America's court\": Iran demands end to US naval blockade before any agreement on Strait of Hormuz",
+    "link": "https://straits.live/data/events.csv"
+   },
+   {
+    "at": "2026-11-02 09:37",
+    "type": "negotiation",
+    "title": "Draft US-Iran deal takes shape, with Hormuz reopening on the table",
+    "link": "https://straits.live/data/events.csv"
+   },
+   {
+    "at": "2026-11-02 08:43",
+    "type": "strike",
+    "title": "Pakistan-bound LNG tanker attacked near Strait of Hormuz despite Iranian nod; Qatar, Saudi condemn attack",
+    "link": "https://straits.live/data/events.csv"
+   },
+   {
+    "at": "2026-11-02 08:35",
+    "type": "negotiation",
+    "title": "Strait of Hormuz Won't Reopen Unless US Ends Blockade: Iranian Spokesman",
+    "link": "https://straits.live/data/events.csv"
+   }
+  ],
+  "demo_note": "Retrieved 2 Nov 2026 from Straits.live: IMF PortWatch daily transits to 25 Oct (latest day provisional), pre-crisis median 85, vessels holding offshore (1 Nov), war-risk estimate (7 Oct, flagged stale), incidents (2 Nov)."
+ }
 }

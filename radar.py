@@ -38,7 +38,7 @@ GOOGLE_NEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:e
 CORE_TERMS = [
     "iron ore", "pellet", "steel", "dri", "hbi", "direct reduc", "briquett", "eaf", "arc furnace",
     "blast furnace", "scrap", "mine", "mining", "freight", "capesize", "dry bulk", "cbam", "tariff",
-    "safeguard", "hydrogen", "metallurg", "coking coal", "rebar", "coil",
+    "safeguard", "hydrogen", "metallurg", "coking coal", "rebar", "coil", "hormuz",
 ]
 
 # Keyword fallback (no API key): watch area by keywords
@@ -252,54 +252,86 @@ class Deduper:
         return None
 
 
-def collect(cfg, db, sources=None, pause=0.0, dedupe_days=3):
-    """Pull RSS feeds. `sources` = list of (label, url_or_path) overriding the config (tests, backfill)."""
+def rss_records(url, label):
+    """Yield normalised records from one RSS/Atom feed."""
     import feedparser
+    feed = feedparser.parse(url)
+    feed_title = clean(feed.feed.get("title", "")) if feed.get("feed") else ""
+    for e in feed.entries:
+        srcd = e.get("source") if isinstance(e.get("source"), dict) else {}
+        domain = domain_of(srcd.get("href")) or domain_of(e.get("link"))
+        yield {"title": clean(e.get("title", "")), "summary": clean(e.get("summary", ""))[:600], "link": e.get("link", ""),
+               "source": clean(srcd.get("title", "")) or feed_title, "domain": "" if "news.google." in domain else domain,
+               "published": e.get("published", "") or e.get("updated", "")}
 
+
+GDELT_API = "https://api.gdeltproject.org/api/v2/doc/doc"
+
+
+def gdelt_records(query, window=None, timespan="2d", maxrecords=75):
+    """Yield records from the GDELT DOC 2.0 API (global news monitoring, free, no key)."""
+    params = {"query": f"{query} sourcelang:english", "mode": "artlist", "format": "json", "maxrecords": maxrecords, "sort": "hybridrel"}
+    if window:
+        params["startdatetime"] = window[0].replace("-", "") + "000000"
+        params["enddatetime"] = window[1].replace("-", "") + "000000"
+    else:
+        params["timespan"] = timespan
+    text = fetch_text(f"{GDELT_API}?{urllib.parse.urlencode(params)}")
+    data = json.loads(text) if text.strip().startswith("{") else {}
+    for a in data.get("articles", []):
+        seen = a.get("seendate", "")  # e.g. 20261102T091500Z
+        published = f"{seen[:4]}-{seen[4:6]}-{seen[6:8]}" if re.match(r"\d{8}", seen) else ""
+        yield {"title": clean(a.get("title", "")), "summary": "", "link": a.get("url", ""),
+               "source": a.get("domain", ""), "domain": domain_of(a.get("url")) or a.get("domain", ""), "published": published}
+
+
+def collect(cfg, db, sources=None, pause=0.0, dedupe_days=3, window=None):
+    """Pull RSS feeds (plus GDELT unless `sources` overrides). One story from many outlets = one item."""
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=dedupe_days)).isoformat()
     seen = Deduper((r["id"], r["title"]) for r in db.execute("SELECT id, title FROM items WHERE first_seen >= ?", (since,)))
-    added = dup = skipped = 0
-    for label, url in (sources or build_sources(cfg)):
+    counts = {"added": 0, "dup": 0, "skipped": 0}
+
+    def ingest(rec, label):
+        title = rec["title"]
+        if not title:
+            return
+        if not prefilter(f"{title} {rec['summary']}", cfg):
+            counts["skipped"] += 1
+            return
+        key = norm_title(title)
+        item_id = hashlib.sha1(key.encode()).hexdigest()[:16]
+        outlet = rec["domain"] or rec["source"].lower()
+        match = seen.match(item_id, key)
+        if match:  # same story from another outlet: record the outlet, count distinct outlets
+            db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)", (match, rec["source"], outlet, rec["link"], now_iso()))
+            db.execute("UPDATE items SET coverage = (SELECT COUNT(*) FROM item_sources WHERE item_id = ?) WHERE id = ?", (match, match))
+            counts["dup"] += 1
+            return
+        db.execute("INSERT INTO items(id,title,link,source,published,summary,query,first_seen) VALUES(?,?,?,?,?,?,?,?)",
+                   (item_id, title, rec["link"], rec["source"], rec["published"], rec["summary"], label, now_iso()))
+        db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)", (item_id, rec["source"], outlet, rec["link"], now_iso()))
+        seen.add(item_id, key)
+        counts["added"] += 1
+
+    for label, url in (sources or build_sources(cfg, window)):
         if pause:
             time.sleep(pause)
         try:
-            feed = feedparser.parse(url)
+            for rec in rss_records(url, label):
+                ingest(rec, label)
         except Exception as exc:  # one bad feed never stops the run
             print(f"collect: {label} failed ({exc})")
-            continue
-        feed_title = clean(feed.feed.get("title", "")) if feed.get("feed") else ""
-        for e in feed.entries:
-            title = clean(e.get("title", ""))
-            if not title:
-                continue
-            summary = clean(e.get("summary", ""))[:600]
-            if not prefilter(f"{title} {summary}", cfg):
-                skipped += 1
-                continue
-            key = norm_title(title)
-            item_id = hashlib.sha1(key.encode()).hexdigest()[:16]
-            srcd = e.get("source") if isinstance(e.get("source"), dict) else {}
-            src_name = clean(srcd.get("title", "")) or feed_title
-            src_domain = domain_of(srcd.get("href")) or domain_of(e.get("link"))
-            if "news.google." in src_domain:
-                src_domain = ""
-            match = seen.match(item_id, key)
-            if match:  # same story from another outlet: record the outlet, count distinct outlets
-                db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)",
-                           (match, src_name, src_domain or src_name.lower(), e.get("link", ""), now_iso()))
-                db.execute("UPDATE items SET coverage = (SELECT COUNT(*) FROM item_sources WHERE item_id = ?) WHERE id = ?", (match, match))
-                dup += 1
-                continue
-            db.execute("INSERT INTO items(id,title,link,source,published,summary,query,first_seen) VALUES(?,?,?,?,?,?,?,?)",
-                       (item_id, title, e.get("link", ""), src_name,
-                        e.get("published", "") or e.get("updated", ""), summary, label, now_iso()))
-            db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)",
-                       (item_id, src_name, src_domain or src_name.lower(), e.get("link", ""), now_iso()))
-            seen.add(item_id, key)
-            added += 1
+    if sources is None:
+        for q in cfg.get("gdelt_queries", []):
+            time.sleep(5)  # GDELT asks for at most one request every 5 seconds
+            try:
+                for rec in gdelt_records(q, window):
+                    ingest(rec, f"gdelt:{q}")
+            except Exception as exc:
+                print(f"collect: GDELT '{q}' failed ({exc})")
     db.commit()
-    print(f"collect: {added} new, {dup} duplicates merged, {skipped} off-topic skipped")
-    return added
+    print(f"collect: {counts['added']} new, {counts['dup']} duplicates merged, {counts['skipped']} off-topic skipped")
+    return counts["added"]
 
 
 # ---------------------------------------------------------------- analyse
@@ -471,6 +503,132 @@ def analyse(cfg, db, max_items=None):
     return done
 
 
+# ---------------------------------------------------------------- Strait of Hormuz watch
+PORTWATCH_QUERY = "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/ArcGIS/rest/services/Daily_Chokepoints_Data/FeatureServer/0/query"
+STRAITS = "https://straits.live"
+
+
+def fetch_text(url, timeout=30):
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (ore-steel-radar)"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", "replace")
+
+
+def find_number(obj, *names):
+    """First numeric value whose key matches one of `names` (case-insensitive), searched breadth-first."""
+    want = [n.lower() for n in names]
+    queue = [obj]
+    while queue:
+        cur = queue.pop(0)
+        if isinstance(cur, dict):
+            for k, v in cur.items():
+                if k.lower() in want and isinstance(v, (int, float)) and not isinstance(v, bool):
+                    return v
+            queue.extend(cur.values())
+        elif isinstance(cur, list):
+            queue.extend(cur)
+    return None
+
+
+def portwatch_transits(chokepoint, since):
+    """Daily transits by vessel type from IMF PortWatch (ArcGIS FeatureServer)."""
+    params = {"where": f"portid='{chokepoint}' AND date >= timestamp '{since} 00:00:00'",
+              "outFields": "date,n_total,n_tanker,n_dry_bulk,n_container,n_general_cargo,n_roro",
+              "orderByFields": "date", "resultRecordCount": 2000, "f": "json"}
+    data = json.loads(fetch_text(f"{PORTWATCH_QUERY}?{urllib.parse.urlencode(params)}"))
+    if "error" in data or not data.get("features"):
+        raise ValueError(str(data.get("error") or "no rows"))
+    rows = []
+    for f in data["features"]:
+        a = f["attributes"]
+        raw = a.get("date")
+        d = dt.datetime.fromtimestamp(raw / 1000, dt.timezone.utc).date().isoformat() if isinstance(raw, (int, float)) else str(raw)[:10]
+        other = sum(a.get(k) or 0 for k in ("n_container", "n_general_cargo", "n_roro"))
+        rows.append({"date": d, "total": a.get("n_total") or 0, "tanker": a.get("n_tanker") or 0,
+                     "dry_bulk": a.get("n_dry_bulk") or 0, "other": other})
+    return rows, "IMF PortWatch"
+
+
+def straits_transits():
+    """Fallback: the same IMF PortWatch series mirrored by Straits.live (tanker vs other cargo only)."""
+    import csv
+    import io
+    rows = [{"date": r["date"], "total": int(float(r["n_total"])), "tanker": int(float(r["n_tanker"])),
+             "dry_bulk": None, "other": int(float(r["n_cargo"]))}
+            for r in csv.DictReader(io.StringIO(fetch_text(f"{STRAITS}/data/transits.csv")))]
+    if not rows:
+        raise ValueError("no rows")
+    return rows, "IMF PortWatch via Straits.live"
+
+
+def summarise_transits(rows, h):
+    rows = sorted(rows, key=lambda r: r["date"])
+    base = sorted(r["total"] for r in rows if h["baseline_from"] <= r["date"] <= h["baseline_to"])
+    baseline = base[len(base) // 2] if base else h.get("baseline_fallback")
+    last7 = rows[-7:]
+    ma7 = round(sum(r["total"] for r in last7) / len(last7), 1) if last7 else None
+    dry7 = round(sum(r["dry_bulk"] or 0 for r in last7) / len(last7), 1) if last7 and last7[-1]["dry_bulk"] is not None else None
+    return {"latest": rows[-1] if rows else None, "ma7": ma7, "dry_bulk_ma7": dry7, "baseline": baseline,
+            "pct_of_baseline": round(ma7 / baseline * 100) if ma7 is not None and baseline else None,
+            "series": rows[-h.get("chart_days", 180):]}
+
+
+def fetch_hormuz(cfg):
+    """Strait of Hormuz watch: daily transits (IMF PortWatch), vessels holding offshore, war-risk insurance and the
+    latest incidents (Straits.live OSINT aggregator). Keeps the last good copy of any part that fails."""
+    h = {"chokepoint": "chokepoint6", "baseline_from": "2025-02-28", "baseline_to": "2026-02-27", "chart_days": 180,
+         **(cfg.get("hormuz") or {})}
+    path = ROOT / "data" / "hormuz.json"
+    old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    out = {"fetched": now_iso(), "baseline_window": [h["baseline_from"], h["baseline_to"]]}
+    since = (dt.date.fromisoformat(h["baseline_from"]) - dt.timedelta(days=1)).isoformat()
+    for getter in (lambda: portwatch_transits(h["chokepoint"], since), straits_transits):
+        try:
+            rows, source = getter()
+            out.update(summarise_transits(rows, h), transit_source=source)
+            break
+        except Exception as exc:
+            print(f"hormuz: transit source failed ({exc})")
+    else:
+        for k in ("latest", "ma7", "dry_bulk_ma7", "baseline", "pct_of_baseline", "series", "transit_source"):
+            if k in old:
+                out[k] = old[k]
+    try:
+        status = json.loads(fetch_text(f"{STRAITS}/status"))
+        out["holding_offshore"] = find_number(status, "strandedOffshore")
+        v = status.get("verdict") if isinstance(status, dict) else None
+        out["verdict"] = (v.get("short") or v.get("label")) if isinstance(v, dict) else v
+    except Exception as exc:
+        print(f"hormuz: status failed ({exc})")
+        out["holding_offshore"], out["verdict"] = old.get("holding_offshore"), old.get("verdict")
+    try:
+        ins = json.loads(fetch_text(f"{STRAITS}/api/v1/insurance"))
+        out["war_risk_multiple"] = find_number(ins, "warRiskMultiple", "multiple", "multiplier")
+        out["insurance_as_of"] = ins.get("asOf") if isinstance(ins, dict) else None
+    except Exception as exc:
+        print(f"hormuz: insurance failed ({exc})")
+        out["war_risk_multiple"], out["insurance_as_of"] = old.get("war_risk_multiple"), old.get("insurance_as_of")
+    try:
+        import csv
+        import io
+        ev = list(csv.DictReader(io.StringIO(fetch_text(f"{STRAITS}/data/events.csv"))))
+        out["events"] = [{"at": e.get("occurred_at_iso", "")[:16].replace("T", " "), "type": e.get("type", ""),
+                          "title": e.get("title", ""), "link": e.get("source_url", "")} for e in ev[:10]]
+    except Exception as exc:
+        print(f"hormuz: events failed ({exc})")
+        out["events"] = old.get("events", [])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(out), encoding="utf-8")
+    print(f"hormuz: 7-day average {out.get('ma7')} transits/day vs baseline {out.get('baseline')}; {len(out.get('events', []))} incidents")
+    return out
+
+
+def load_hormuz():
+    path = ROOT / "data" / "hormuz.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
 # ---------------------------------------------------------------- market data
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
 STOOQ_CSV = "https://stooq.com/q/d/l/?s={symbol}&i=d"
@@ -598,7 +756,7 @@ def finalise(r, source_rows, cfg):
         "verification": status, "checks": checks, "confidence": conf}
 
 
-def write_reports(cfg, scanned_by_day, items, days, note="", markets=None):
+def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormuz=None):
     """docs/index.html embeds the last `days` days; every day also gets docs/data/<date>.json for the date filter."""
     s = cfg["settings"]
     out = ROOT / s.get("output_dir", "docs")
@@ -626,7 +784,8 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None):
     data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
             "default_days": days, "day_list": day_list, "inline_days": inline_days,
             "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "functions": cfg["functions"], "pinned_hashtags": cfg.get("pinned_hashtags", []), "areas": cfg["watch_areas"],
-            "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets()}
+            "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets(),
+            "hormuz": hormuz if hormuz is not None else load_hormuz()}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     html_path = out / "index.html"
@@ -676,7 +835,7 @@ def demo(cfg):
         x.setdefault("checks", [])
         x["confidence"] = min(x["confidence"], 5) if x["verification"] == "unconfirmed" else min(x["confidence"], 7) if x["verification"] == "single" else x["confidence"]
     return write_reports(cfg, {items[0]["first_seen"]: data["scanned"]}, items, data.get("days", 7), data.get("note", ""),
-                         data.get("markets", {}))
+                         data.get("markets", {}), data.get("hormuz", {}))
 
 
 # ---------------------------------------------------------------- backfill
@@ -688,7 +847,7 @@ def backfill(cfg, db, days=120, step=14, max_items=4000):
     while start < end:
         stop = min(start + dt.timedelta(days=step), end + dt.timedelta(days=1))
         print(f"backfill: {start} to {stop}")
-        total += collect(cfg, db, build_sources(cfg, (start.isoformat(), stop.isoformat())), pause=0.7, dedupe_days=days + 14)
+        total += collect(cfg, db, None, pause=0.7, dedupe_days=days + 14, window=(start.isoformat(), stop.isoformat()))
         start = stop
     print(f"backfill: {total} headlines collected over {days} days")
     analyse(cfg, db, max_items)
@@ -700,10 +859,11 @@ def run_pipeline(cfg, days):
     try:
         collect(cfg, db)
         analyse(cfg, db)
-        try:
-            fetch_markets(cfg)
-        except Exception as exc:
-            print(f"markets: skipped ({exc})")
+        for fetch in (fetch_markets, fetch_hormuz):
+            try:
+                fetch(cfg)
+            except Exception as exc:
+                print(f"{fetch.__name__}: skipped ({exc})")
         report(cfg, db, days)
     finally:
         db.close()
@@ -771,10 +931,11 @@ def main():
     if args.command in ("run", "analyse"):
         analyse(cfg, db)
     if args.command in ("run", "markets"):
-        try:
-            fetch_markets(cfg)
-        except Exception as exc:  # market data is a bonus; never fail the run for it
-            print(f"markets: skipped ({exc})")
+        for fetch in (fetch_markets, fetch_hormuz):
+            try:
+                fetch(cfg)
+            except Exception as exc:  # market and shipping data are a bonus; never fail the run for them
+                print(f"{fetch.__name__}: skipped ({exc})")
     if args.command in ("run", "report"):
         report(cfg, db, days)
 

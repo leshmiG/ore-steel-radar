@@ -190,6 +190,11 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 .hz-src{font-size:12.5px;color:var(--faint);margin-top:10px}
 .hz-src a{color:var(--muted)}
 
+/* why it matters */
+.why{margin:10px 0 0;padding:9px 12px;background:#eef3f8;border-radius:10px;font-size:14px;color:#2c3744;max-width:110ch}
+.why b{font:800 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel);margin-right:6px}
+.top10 .why{margin:0 0 10px;font-size:12.5px;padding:7px 10px}
+
 /* market pulse */
 .mkts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:18px}
 .mk{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 10px;box-shadow:var(--shadow);display:grid;gap:4px}
@@ -283,6 +288,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
     </div>
     <aside class="top10" aria-label="Top 10 news by hashtag">
       <h2>Top 10 · trending</h2>
+      <p class="why"><b>Why it matters for us</b>The ten biggest stories on any theme at a glance, without reading 100 sources.</p>
       <div class="tags" id="tagChips"></div>
       <ol class="t10" id="top10"></ol>
     </aside>
@@ -293,6 +299,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   <section class="section gutter"><div class="inner">
     <h2>Your briefing</h2>
     <p class="sub">Pick a function to filter every call, chart and signal on this page.</p>
+    <p class="why"><b>Why it matters for us</b>Each function sees only the news that could change its decisions, with a suggested next step, so nothing important is missed and nobody wades through noise.</p>
     <div class="leaders" role="group" aria-label="Function" id="leaders"></div>
     <div class="remit" id="remit"></div>
     <div class="compbar" id="compbar">
@@ -312,6 +319,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   <section class="section gutter" style="padding-top:8px"><div class="inner">
     <h2>The picture</h2>
     <p class="sub" id="chartsSub"></p>
+    <p class="why"><b>Why it matters for us</b>Shows where pressure is building, by topic, company and region, before it reaches our customers, suppliers or prices.</p>
     <div class="charts">
       <article class="panel" id="p-area"><header><div><h3>Where the pressure is</h3><p class="insight" id="i-area"></p></div><button class="tbtn" data-t="area">Table</button></header><div class="canvas-box tall"><canvas id="c-area" role="img" aria-label="Total impact by watch area"></canvas></div><div class="tablewrap" hidden id="t-area"></div></article>
       <article class="panel" id="p-companies"><header><div><h3>Who's making news</h3><p class="insight" id="i-companies"></p></div><button class="tbtn" data-t="companies">Table</button></header><div class="canvas-box"><canvas id="c-companies" role="img" aria-label="Companies with the most signals"></canvas></div><div class="tablewrap" hidden id="t-companies"></div></article>
@@ -321,6 +329,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   <section class="section gutter" id="hormuzSec" hidden><div class="inner">
     <h2>Strait of Hormuz watch</h2>
     <p class="sub">Daily vessel transits, ships holding offshore, war-risk insurance and the latest incidents.</p>
+    <p class="why" id="hzWhy"></p>
     <div class="hz-status" id="hzStatus"></div>
     <div class="hz-tiles" id="hzTiles"></div>
     <div class="hz-grid">
@@ -332,6 +341,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   <section class="section gutter" id="marketSec" hidden><div class="inner">
     <h2>Market pulse</h2>
     <p class="sub" id="mkSub"></p>
+    <p class="why"><b>Why it matters for us</b>Tracks our input costs (iron ore, coal, gas, oil) and how miners and peers are valued, to time purchases, negotiate contracts and benchmark performance.</p>
     <div class="mkts" id="mkts"></div>
     <article class="panel" style="margin-top:14px" id="p-eq"><header><div><h3>Miners and steelmakers on the stock market</h3><p class="insight" id="i-eq"></p></div><button class="tbtn" data-t="eq">Table</button></header><div class="canvas-box" style="height:300px"><canvas id="c-eq" role="img" aria-label="One-month share price change of listed miners and steelmakers"></canvas></div><div class="tablewrap" hidden id="t-eq"></div></article>
   </div></section>
@@ -340,6 +350,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   <section class="section gutter" style="padding-top:8px"><div class="inner">
     <h2>All signals</h2>
     <p class="sub">Showing impact 7 and above by default; use the impact filter to see the rest. Every signal links to its sources.</p>
+    <p class="why"><b>Why it matters for us</b>Every claim is checked against its sources and rated for credibility, so decisions rest on verified facts rather than rumours.</p>
     <div class="filters">
       <select id="fArea" aria-label="Watch area"></select>
       <select id="fRegion" aria-label="Region"></select>
@@ -720,6 +731,12 @@ function renderHormuz(){
   const fmtD = d => fmt(d, true);
   document.getElementById("hzStatus").innerHTML = `${h.verdict ? `<span class="verdict ${vcls}">${esc(h.verdict)}</span>` : ""}
     <p>Commercial transits are running at <strong>${h.pct_of_baseline ?? "–"}%</strong> of the pre-crisis level: <strong>${h.ma7 ?? "–"}</strong> a day over the last 7 days against a median of <strong>${h.baseline ?? "–"}</strong> (${fmtD(h.baseline_window[0])} – ${fmtD(h.baseline_window[1])}).</p>`;
+  const pct = h.pct_of_baseline;
+  document.getElementById("hzWhy").innerHTML = `<b>Why it matters for us</b>` + (pct != null && pct < 50
+    ? `With traffic at ${pct}% of normal, iron ore, pellet and steel cargoes into and out of Gulf ports inside the strait face delays, scarce shipping and war-risk premiums. This view tells Supply Chain when to build buffer stocks or switch to ports outside the strait, Finance & Risk how freight and insurance costs are moving, and Sales which customers may need supply from us.`
+    : pct != null && pct < 90
+    ? `Traffic is recovering (${pct}% of normal). Shipping and insurance costs should ease; use this to time cargoes and to tell customers when normal lead times return.`
+    : `Traffic is close to normal. This view gives early warning if that changes, so we can protect raw material supply and deliveries in time.`);
   const tiles = [
     [h.ma7, "Transits a day (7-day avg)", `vs ${h.baseline} before the crisis`],
     [h.pct_of_baseline != null ? h.pct_of_baseline + "%" : null, "Of pre-crisis traffic", ""],

@@ -1,0 +1,184 @@
+# Ore & Steel Radar - configuration
+# Fully automatic: no company details needed. Edit lists here; no code changes required.
+
+# Perspective used for the "so what". Generic by default; optional override via the
+# RADAR_COMPANY_PROFILE environment variable / GitHub secret.
+perspective: >
+  A typical iron ore pellet producer and steelmaker based in the GCC: buys iron ore
+  concentrate and fines by sea, produces DR-grade and BF-grade pellets, runs DRI and
+  electric arc furnace steelmaking, and sells pellets and steel into the GCC, MENA,
+  India, Europe and Asia.
+
+leaders:
+  CEO: "Strategy, capacity, M&A, partnerships, market entry"
+  CFO: "Margins, costs, prices, FX, capex, financing, peer results, financial risk"
+  CTO: "Operations for pelletizing and steelmaking: process, quality, energy, reliability, safety"
+  SMO: "Sales and marketing: pellet and steel pricing, customers, markets"
+  CPO: "Procurement: iron ore, gas, freight, refractories, electrodes, supplier risk"
+
+watch_areas:
+  - Markets and prices
+  - Supply and demand
+  - Technology and process
+  - Policy and regulation
+  - Customers and end markets
+  - Suppliers and logistics
+  - Research and innovation
+  - Macro and geopolitics
+  - Competitors
+
+regions:
+  - GCC and Middle East
+  - China
+  - India
+  - Asia Pacific
+  - Europe
+  - CIS
+  - North America
+  - South America
+  - Africa
+  - Global
+
+# Industry topics: each becomes a Google News search
+topics:
+  - iron ore pellets
+  - DR grade pellets
+  - blast furnace pellets
+  - pellet premium
+  - iron ore price
+  - iron ore fines
+  - iron ore concentrate
+  - iron ore mine
+  - direct reduced iron
+  - hot briquetted iron
+  - pelletizing plant
+  - hydrogen DRI
+  - green steel
+  - electric arc furnace
+  - steel scrap price
+  - steel prices
+  - hot rolled coil price
+  - rebar price
+  - China steel output
+  - global steel demand
+  - CBAM steel
+  - steel tariffs
+  - steel safeguard duty
+  - Capesize freight iron ore
+  - coking coal price
+  - Middle East steel
+  - Saudi steel
+  - India steel
+
+# Companies tracked worldwide (searched in groups of 4 with OR)
+competitors:
+  iron_ore_and_pellets:
+    - Vale
+    - Rio Tinto
+    - BHP
+    - Fortescue
+    - Anglo American
+    - Kumba Iron Ore
+    - LKAB
+    - Samarco
+    - Ferrexpo
+    - Metalloinvest
+    - Metinvest
+    - Cleveland-Cliffs
+    - ArcelorMittal Mining Canada
+    - Champion Iron
+    - Mineral Resources
+    - Hancock Prospecting
+    - NMDC
+    - KIOCL
+    - CSN Mineracao
+    - SNIM
+    - Gulf Industrial Investment
+    - Bahrain Steel
+  steelmakers_china:
+    - China Baowu
+    - Baosteel
+    - Ansteel
+    - HBIS
+    - Shagang
+    - Jianlong
+    - Shougang
+    - Shandong Iron and Steel
+    - Hunan Valin
+  steelmakers_asia_india:
+    - Nippon Steel
+    - JFE Steel
+    - POSCO
+    - Hyundai Steel
+    - Tata Steel
+    - JSW Steel
+    - SAIL
+    - Jindal Steel
+    - AM/NS India
+    - Hoa Phat
+    - Krakatau Steel
+  steelmakers_europe_cis:
+    - ArcelorMittal
+    - thyssenkrupp Steel
+    - Salzgitter
+    - SSAB
+    - voestalpine
+    - Liberty Steel
+    - Severstal
+    - NLMK
+    - MMK
+    - Evraz
+    - Erdemir
+    - Tosyali
+  steelmakers_americas:
+    - Nucor
+    - Steel Dynamics
+    - U.S. Steel
+    - Gerdau
+    - Ternium
+    - Usiminas
+  gcc_middle_east_africa:
+    - Hadeed
+    - EMSTEEL
+    - Jindal Shadeed
+    - Qatar Steel
+    - Ezz Steel
+    - Al Ittefaq Steel
+    - Rajhi Steel
+    - Sulb
+    - Foulath
+    - Mobarakeh Steel
+    - Essar
+    - ArcelorMittal South Africa
+  green_steel_and_technology:
+    - Stegra
+    - HYBRIT
+    - Midrex
+    - Tenova
+    - Primetals
+    - Danieli
+    - SMS group
+    - Metso
+    - Boston Metal
+
+# Extra RSS feeds (check each site's terms before automating)
+feeds:
+  - https://www.mining.com/feed/
+  - https://www.hellenicshippingnews.com/feed/
+
+settings:
+  lookback: 2d                 # Google News window per run
+  llm_provider: anthropic      # anthropic | bedrock | none
+  model: claude-sonnet-5       # analysis model (Anthropic API ID)
+  triage_model: claude-haiku-4-5-20251001   # cheap first-pass relevance filter; "" to skip
+  bedrock_model: ""            # Bedrock model or inference profile ID, if llm_provider is bedrock
+  bedrock_triage_model: ""
+  aws_region: us-east-1
+  batch_size: 10               # headlines per analysis call
+  triage_batch_size: 40        # headlines per triage call
+  max_items_per_run: 500       # cost guard
+  min_impact_for_brief: 5
+  alert_impact: 8
+  report_days: 7               # dashboard window
+  db_path: data/radar.db
+  output_dir: docs             # GitHub Pages serves this folder

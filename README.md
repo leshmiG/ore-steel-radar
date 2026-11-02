@@ -8,7 +8,8 @@ Innovation & Research**. No company details needed. It also watches the **Strait
 with hashtags so you can see what is trending.
 
 ```
-Google News searches, 46 industry and maritime websites, GDELT global news and RSS feeds (~100 sources)
+Google News searches, 95 industry, maritime, regional and official websites, GDELT global news and RSS feeds
+  (~180 sources and searches)
   + FRED/Stooq market data + IMF PortWatch and Straits.live Strait of Hormuz shipping data
   -> keyword pre-filter -> dedupe (one story from many outlets = 1 signal, every outlet recorded)
   -> triage with a fast model (drops off-topic headlines cheaply)
@@ -56,6 +57,7 @@ uses those feeds directly so the figures can be checked and archived.
   number, chart and signal, and a **competitor picker** to focus on chosen companies.
 - **Top 3 calls**, then charts: pressure by watch area, companies in the news and regions. Every
   chart has a table view.
+- **Sources we monitor:** every website by credibility tier, plus the searches, market data and shipping data used.
 - **All signals** shows impact 7 and above by default; filters for impact, hashtag, watch area, region, verification,
   tailwind/headwind and search. Every signal carries a verification badge and links to all outlets that reported it.
 

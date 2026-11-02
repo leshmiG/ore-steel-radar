@@ -756,6 +756,16 @@ def finalise(r, source_rows, cfg):
         "verification": status, "checks": checks, "confidence": conf}
 
 
+def source_catalog(cfg):
+    """Everything the radar reads, for the 'Sources we monitor' section."""
+    m = cfg.get("markets", {})
+    return {"sites": sorted(({"domain": d, "tier": tier_of(d, cfg)} for d in cfg.get("site_watch", [])),
+                            key=lambda x: (["official", "tier1", "tier2", "tier3"].index(x["tier"]), x["domain"])),
+            "topics": cfg.get("topics", []), "gdelt": cfg.get("gdelt_queries", []), "feeds": cfg.get("feeds", []),
+            "companies": len(cfg["companies"]), "company_searches": sum(-(-len(v) // 4) for v in cfg["competitor_groups"].values()),
+            "commodities": [c["name"] for c in m.get("commodities", [])], "equities": [e["name"] for e in m.get("equities", [])]}
+
+
 def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormuz=None):
     """docs/index.html embeds the last `days` days; every day also gets docs/data/<date>.json for the date filter."""
     s = cfg["settings"]
@@ -783,7 +793,7 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormu
     inline = [x for x in items if x["date"] >= start]
     data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
             "default_days": days, "day_list": day_list, "inline_days": inline_days,
-            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "functions": cfg["functions"], "pinned_hashtags": cfg.get("pinned_hashtags", []), "areas": cfg["watch_areas"],
+            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "functions": cfg["functions"], "pinned_hashtags": cfg.get("pinned_hashtags", []), "catalog": source_catalog(cfg), "areas": cfg["watch_areas"],
             "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets(),
             "hormuz": hormuz if hormuz is not None else load_hormuz()}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(

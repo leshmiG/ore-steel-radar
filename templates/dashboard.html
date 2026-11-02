@@ -190,6 +190,18 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 .hz-src{font-size:12.5px;color:var(--faint);margin-top:10px}
 .hz-src a{color:var(--muted)}
 
+/* sources we monitor */
+.srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
+.srcgrid .panel h3{font-size:18px}
+.srcgrid ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:#2c3744;display:grid;gap:3px}
+.srcgrid .big{font:800 34px/1 var(--display);color:var(--steel)}
+.sites{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow)}
+.sites summary{cursor:pointer;font:800 16px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--steel)}
+.sites h4{margin:14px 0 6px;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sites .chips{display:flex;flex-wrap:wrap;gap:6px}
+.sites .chips a{font:500 12.5px var(--mono);color:var(--steel);background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;text-decoration:none}
+.sites .chips a:hover{border-color:var(--steel-mid)}
+
 /* why it matters */
 .why{margin:10px 0 0;padding:9px 12px;background:#eef3f8;border-radius:10px;font-size:14px;color:#2c3744;max-width:110ch}
 .why b{font:800 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel);margin-right:6px}
@@ -368,6 +380,13 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
     </div>
     <div class="count" id="count"></div>
     <div class="feed" id="feed" aria-live="polite"></div>
+  </div></section>
+  <section class="section gutter" style="padding-top:8px"><div class="inner">
+    <h2>Sources we monitor</h2>
+    <p class="sub" id="srcSub"></p>
+    <p class="why"><b>Why it matters for us</b>Broad coverage means we hear about a move early; credibility ratings and cross-checks mean we can trust what we hear.</p>
+    <div class="srcgrid" id="srcGrid"></div>
+    <details class="sites"><summary id="siteSum">Show all industry websites</summary><div id="siteList"></div></details>
   </div></section>
 </main>
 
@@ -766,6 +785,24 @@ function renderHormuz(){
   document.getElementById("hzSrc").innerHTML = `Transits: <a href="https://portwatch.imf.org/" target="_blank" rel="noopener">IMF PortWatch</a> (satellite AIS; latest days are provisional)${h.transit_source && h.transit_source.includes("Straits") ? ", via the Straits.live mirror" : ""}. Vessels holding, insurance and incidents: <a href="https://straits.live/" target="_blank" rel="noopener">Straits.live</a>, an OSINT aggregator; each incident links to its source. ${h.demo_note ? esc(h.demo_note) : `Updated ${fmtD((h.fetched || "").slice(0, 10))}.`}`;
 }
 
+/* ---------- sources we monitor */
+function renderSources(){
+  const c = DATA.catalog; if (!c) return;
+  const total = c.sites.length + c.topics.length + c.company_searches + c.gdelt.length + c.feeds.length + c.commodities.length + c.equities.length + 2;
+  document.getElementById("srcSub").textContent = `About ${total} sources and searches, refreshed every day.`;
+  const card = (n, title, lines) => `<article class="panel"><span class="big">${n}</span><h3>${title}</h3><ul>${lines.map(l => `<li>${l}</li>`).join("")}</ul></article>`;
+  document.getElementById("srcGrid").innerHTML = [
+    card(c.sites.length, "Industry and news websites", ["Price reporters: Fastmarkets, Argus, S&P Global, Mysteel, SMM, Kallanish", "Trade, mining, shipping, GCC, India and China press", "Industry bodies, regulators and technology suppliers"]),
+    card(c.topics.length + c.company_searches, "Google News searches", [`${c.topics.length} industry topics, incl. Strait of Hormuz`, `${c.companies} companies worldwide in ${c.company_searches} searches`]),
+    card(c.gdelt.length + c.feeds.length, "Global news monitoring", ["GDELT news monitoring (global, 65 languages)", ...c.feeds.map(f => esc(f.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]) + " RSS")]),
+    card(c.commodities.length + c.equities.length, "Market data", [`Prices (FRED, IMF/BLS/EIA): ${esc(c.commodities.join(", "))}`, `Share prices (Stooq): ${esc(c.equities.join(", "))}`]),
+    card(2, "Shipping data", ["IMF PortWatch: daily Strait of Hormuz transits by vessel type", "Straits.live OSINT: vessels holding offshore, war-risk insurance, incidents"])].join("");
+  const label = {official:"Official: companies, governments, industry bodies", tier1:"Tier 1: price reporters and major wires", tier2:"Tier 2: established trade and regional press", tier3:"Other"};
+  document.getElementById("siteSum").textContent = `Show all ${c.sites.length} industry websites by credibility`;
+  document.getElementById("siteList").innerHTML = ["official", "tier1", "tier2", "tier3"].map(t => { const g = c.sites.filter(x => x.tier === t);
+    return g.length ? `<h4>${label[t]} (${g.length})</h4><div class="chips">${g.map(x => `<a href="https://${esc(x.domain)}" target="_blank" rel="noopener">${esc(x.domain)}</a>`).join("")}</div>` : ""; }).join("");
+}
+
 function renderAll(){ renderCompbar(); renderLeaders(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
 
 if (window.Chart) {
@@ -774,6 +811,7 @@ if (window.Chart) {
   document.querySelectorAll(".canvas-box").forEach(b => b.innerHTML = `<div class="nochart">Charts could not load. Use the Table button.</div>`);
 }
 setPreset(state.preset);
+renderSources();
 renderHormuz();
 renderMarkets();
 

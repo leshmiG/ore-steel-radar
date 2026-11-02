@@ -225,6 +225,62 @@ site_watch:
   - midrex.com
   - ieefa.org
   - iea.org
+  # more steel, metals and mining press
+  - metalminer.com
+  - steelguru.com
+  - ferroalloynet.com
+  - northernminer.com
+  - miningmx.com
+  - stockhead.com.au
+  - proactiveinvestors.com
+  # more shipping and logistics
+  - freightwaves.com
+  - marinelink.com
+  - porttechnology.org
+  - balticexchange.com
+  - drybulkmagazine.com
+  # more GCC and Middle East
+  - agbi.com
+  - meed.com
+  - arabianbusiness.com
+  - gulfbusiness.com
+  - gdnonline.com
+  - newsofbahrain.com
+  - bna.bh
+  - spa.gov.sa
+  - wam.ae
+  - khaleejtimes.com
+  - timesofoman.com
+  - omanobserver.om
+  - saudigazette.com.sa
+  # more India and China
+  - livemint.com
+  - thehindubusinessline.com
+  - financialexpress.com
+  - moneycontrol.com
+  - scmp.com
+  - caixinglobal.com
+  - chinadaily.com.cn
+  # industry bodies, policy and data
+  - eurofer.eu
+  - steel.org
+  - aist.org
+  - worldbank.org
+  - oecd.org
+  - wto.org
+  - globalenergymonitor.org
+  # green steel and energy transition
+  - greensteelworld.com
+  - hydrogeninsight.com
+  - rechargenews.com
+  - carbonbrief.org
+  - agora-industry.org
+  # technology suppliers
+  - primetals.com
+  - danieli.com
+  - sms-group.com
+  - metso.com
+  - tenova.com
 
 # Source credibility, used to verify each signal. Anything not listed is tier 3.
 source_tiers:
@@ -252,6 +308,20 @@ source_tiers:
     - ukmto.org
     - imo.org
     - imf.org
+    - bna.bh
+    - spa.gov.sa
+    - wam.ae
+    - eurofer.eu
+    - steel.org
+    - aist.org
+    - worldbank.org
+    - oecd.org
+    - wto.org
+    - primetals.com
+    - danieli.com
+    - sms-group.com
+    - metso.com
+    - tenova.com
   tier1:      # price reporters and major wires
     - reuters.com
     - bloomberg.com
@@ -263,6 +333,8 @@ source_tiers:
     - kallanish.com
     - mysteel.net
     - metal.com
+    - scmp.com
+    - meed.com
   tier2:      # established trade and regional press
     - steelorbis.com
     - gmk.center
@@ -290,6 +362,31 @@ source_tiers:
     - nature.com
     - ieefa.org
     - omanobserver.om
+    - metalminer.com
+    - steelguru.com
+    - northernminer.com
+    - miningmx.com
+    - freightwaves.com
+    - marinelink.com
+    - porttechnology.org
+    - balticexchange.com
+    - drybulkmagazine.com
+    - agbi.com
+    - arabianbusiness.com
+    - gulfbusiness.com
+    - gdnonline.com
+    - livemint.com
+    - thehindubusinessline.com
+    - financialexpress.com
+    - moneycontrol.com
+    - caixinglobal.com
+    - globalenergymonitor.org
+    - greensteelworld.com
+    - hydrogeninsight.com
+    - rechargenews.com
+    - carbonbrief.org
+    - agora-industry.org
+    - proactiveinvestors.com
     - timesofoman.com
     - khaleejtimes.com
     - gulf-times.com
@@ -334,6 +431,10 @@ gdelt_queries:
   - '"iron ore pellets" OR "pellet plant"'
   - '"direct reduced iron" OR "green steel"'
   - '"Strait of Hormuz" (shipping OR tanker OR vessel)'
+  - '"hot briquetted iron" OR HBI'
+  - '"iron ore" (Bahrain OR Saudi OR Oman OR UAE OR Qatar)'
+  - 'steel (tariff OR CBAM OR safeguard)'
+  - '(Capesize OR "dry bulk") freight'
 
 # Strait of Hormuz watch: daily transits from IMF PortWatch (chokepoint6), plus vessels holding offshore,
 # war-risk insurance and incidents from the Straits.live OSINT aggregator. Baseline = median daily transits

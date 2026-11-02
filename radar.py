@@ -9,6 +9,7 @@ Usage:
     python radar.py collect | analyse | markets | report [--days 7]
     python radar.py serve [--daily 06:30] # host docs/ and refresh daily (Docker / server)
     python radar.py demo                 # dashboard from demo/demo_items.json
+    python radar.py backfill --days 120  # one-off: search the last 120 days in two-week windows
 """
 import argparse
 import datetime as dt
@@ -29,7 +30,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent
 TEMPLATE_PATH = ROOT / "templates" / "dashboard.html"
-LEADERS = ["CEO", "CFO", "CTO", "SMO", "CPO"]
+LEGACY_FUNCTIONS = {"CEO": "GOV", "CFO": "FIN", "SMO": "FIN", "CPO": "SCM", "CTO": "INN"}  # older databases
 SIGNALS = ["tailwind", "headwind", "neutral"]
 GOOGLE_NEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
@@ -51,11 +52,18 @@ FALLBACK_AREAS = {
     "Research and innovation": ["study", "research", "patent", "university", "startup"],
     "Macro and geopolitics": ["stimulus", "interest rate", "war", "conflict", "election", "currency", "gdp"],
 }
-AREA_LEADERS = {
-    "Markets and prices": ["SMO", "CFO", "CPO"], "Supply and demand": ["CEO", "SMO"],
-    "Technology and process": ["CTO"], "Policy and regulation": ["CEO", "CFO", "SMO"],
-    "Customers and end markets": ["SMO"], "Suppliers and logistics": ["CPO", "CFO"],
-    "Research and innovation": ["CTO"], "Macro and geopolitics": ["CEO", "CFO"], "Competitors": ["CEO", "SMO"],
+AREA_FUNCTIONS = {
+    "Markets and prices": ["FIN"], "Supply and demand": ["GOV", "FIN"], "Technology and process": ["INN"],
+    "Policy and regulation": ["GOV", "FIN"], "Customers and end markets": ["GOV", "SCM"],
+    "Suppliers and logistics": ["SCM"], "Research and innovation": ["INN"], "Macro and geopolitics": ["GOV", "FIN", "SCM"],
+    "Competitors": ["GOV", "FIN"],
+}
+FALLBACK_TAGS = {
+    "#IronOre": ["iron ore"], "#Pellets": ["pellet"], "#DRI": ["dri", "direct reduc"], "#GreenSteel": ["green steel", "decarbon"],
+    "#HydrogenDRI": ["hydrogen"], "#SteelPrices": ["steel price", "rebar", "coil", "hrc"], "#ChinaSteel": ["china"],
+    "#IndiaSteel": ["india"], "#GCCSteel": ["saudi", "uae", "oman", "bahrain", "qatar", "gcc"], "#StraitOfHormuz": ["hormuz"],
+    "#Freight": ["freight", "capesize"], "#Shipping": ["shipping", "vessel", "tanker"], "#CBAM": ["cbam", "carbon border"],
+    "#Tariffs": ["tariff", "safeguard", "duty"], "#Simandou": ["simandou"], "#Earnings": ["profit", "results", "earnings"],
 }
 REGION_WORDS = {
     "GCC and Middle East": ["saudi", "uae", "emirates", "oman", "bahrain", "qatar", "kuwait", "iran", "egypt", "gcc", "middle east", "duqm", "dubai", "abu dhabi"],
@@ -92,7 +100,28 @@ def load_config(path):
         groups = {"companies": groups}
     cfg["competitor_groups"] = groups
     cfg["companies"] = [c for names in groups.values() for c in names]
+    cfg.setdefault("functions", {"GOV": {"name": "Governance & Strategy", "remit": ""}, "FIN": {"name": "Finance & Risk", "remit": ""},
+                                 "SCM": {"name": "Supply Chain", "remit": ""}, "INN": {"name": "Innovation & Research", "remit": ""}})
+    cfg.setdefault("hashtags", [])
     return cfg
+
+
+def norm_functions(codes, cfg):
+    out = []
+    for c in codes or []:
+        c = LEGACY_FUNCTIONS.get(c, c)
+        if c in cfg["functions"] and c not in out:
+            out.append(c)
+    return out
+
+
+def norm_tags(tags):
+    out = []
+    for t in tags or []:
+        t = "#" + re.sub(r"[^A-Za-z0-9]", "", str(t).lstrip("#"))
+        if len(t) > 2 and t.lower() not in [o.lower() for o in out]:
+            out.append(t)
+    return out[:4]
 
 
 def connect(db_path):
@@ -106,13 +135,14 @@ def connect(db_path):
     CREATE TABLE IF NOT EXISTS insights(
         item_id TEXT PRIMARY KEY, relevant INTEGER, watch_area TEXT, event_type TEXT, companies TEXT,
         countries TEXT, region TEXT, leaders TEXT, signal TEXT, impact INTEGER, confidence INTEGER,
-        what_happened TEXT, so_what TEXT, action TEXT, analysed_by TEXT, analysed_at TEXT, checks TEXT);
+        what_happened TEXT, so_what TEXT, action TEXT, analysed_by TEXT, analysed_at TEXT, checks TEXT, tags TEXT);
     CREATE TABLE IF NOT EXISTS item_sources(
         item_id TEXT, name TEXT, domain TEXT, link TEXT, seen_at TEXT, PRIMARY KEY(item_id, domain));
     """)
     cols = {r[1] for r in db.execute("PRAGMA table_info(insights)")}
-    if "checks" not in cols:  # upgrade databases created by older versions
-        db.execute("ALTER TABLE insights ADD COLUMN checks TEXT")
+    for col in ("checks", "tags"):  # upgrade databases created by older versions
+        if col not in cols:
+            db.execute(f"ALTER TABLE insights ADD COLUMN {col} TEXT")
     return db
 
 
@@ -131,19 +161,21 @@ def norm_title(title):
     return re.sub(r"[^a-z0-9 ]", "", title.lower()).strip()
 
 
-def build_sources(cfg):
-    """(label, url) pairs: one search per topic, companies OR-ed in groups of 4, plus extra feeds."""
-    lookback = cfg["settings"].get("lookback", "2d")
-    out = [(t, GOOGLE_NEWS.format(q=urllib.parse.quote(f"{t} when:{lookback}"))) for t in cfg.get("topics", [])]
+def build_sources(cfg, window=None):
+    """(label, url) pairs: one search per topic, companies OR-ed in groups of 4, industry sites, extra feeds.
+    window=(after, before) dates replaces the rolling lookback (used by backfill)."""
+    when = f"after:{window[0]} before:{window[1]}" if window else f"when:{cfg['settings'].get('lookback', '2d')}"
+    out = [(t, GOOGLE_NEWS.format(q=urllib.parse.quote(f"{t} {when}"))) for t in cfg.get("topics", [])]
     for group, names in cfg["competitor_groups"].items():
         for i in range(0, len(names), 4):
             ors = " OR ".join(f'"{n}"' for n in names[i:i + 4])
-            q = f"({ors}) (iron ore OR pellets OR steel) when:{lookback}"
+            q = f"({ors}) (iron ore OR pellets OR steel) {when}"
             out.append((f"companies:{group}", GOOGLE_NEWS.format(q=urllib.parse.quote(q))))
     for d in cfg.get("site_watch", []):
-        q = f"site:{d} (iron ore OR pellets OR steel OR DRI OR HBI) when:{lookback}"
+        q = f"site:{d} (iron ore OR pellets OR steel OR DRI OR HBI OR Hormuz) {when}"
         out.append((f"site:{d}", GOOGLE_NEWS.format(q=urllib.parse.quote(q))))
-    out += [("feed", f) for f in cfg.get("feeds", [])]
+    if not window:
+        out += [("feed", f) for f in cfg.get("feeds", [])]
     return out
 
 
@@ -190,15 +222,46 @@ def prefilter(text, cfg):
     return any(k in t for k in CORE_TERMS) or any(c.lower() in t for c in cfg["companies"])
 
 
-def collect(cfg, db, sources=None):
-    """Pull RSS feeds. `sources` = list of (label, url_or_path) overriding the config (tests)."""
+class Deduper:
+    """Finds the same story told by different outlets: exact title id, or >= 88% similar titles
+    that share at least two longer words (an index keeps this fast for thousands of headlines)."""
+    def __init__(self, rows):
+        self.titles, self.index = {}, {}
+        for rid, title in rows:
+            self.add(rid, norm_title(title))
+
+    @staticmethod
+    def words(key):
+        return {w for w in key.split() if len(w) >= 5}
+
+    def add(self, rid, key):
+        self.titles[rid] = key
+        for w in self.words(key):
+            self.index.setdefault(w, set()).add(rid)
+
+    def match(self, rid, key):
+        if rid in self.titles:
+            return rid
+        counts = {}
+        for w in self.words(key):
+            for other in self.index.get(w, ()):
+                counts[other] = counts.get(other, 0) + 1
+        for other, n in counts.items():
+            if n >= 2 and SequenceMatcher(None, self.titles[other], key).ratio() >= 0.88:
+                return other
+        return None
+
+
+def collect(cfg, db, sources=None, pause=0.0, dedupe_days=3):
+    """Pull RSS feeds. `sources` = list of (label, url_or_path) overriding the config (tests, backfill)."""
     import feedparser
 
-    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=3)).isoformat()
-    recent = [(r["id"], norm_title(r["title"])) for r in
-              db.execute("SELECT id, title FROM items WHERE first_seen >= ?", (since,))]
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=dedupe_days)).isoformat()
+    seen = Deduper((r["id"], r["title"]) for r in db.execute("SELECT id, title FROM items WHERE first_seen >= ?", (since,)))
     added = dup = skipped = 0
     for label, url in (sources or build_sources(cfg)):
+        if pause:
+            time.sleep(pause)
         try:
             feed = feedparser.parse(url)
         except Exception as exc:  # one bad feed never stops the run
@@ -220,7 +283,7 @@ def collect(cfg, db, sources=None):
             src_domain = domain_of(srcd.get("href")) or domain_of(e.get("link"))
             if "news.google." in src_domain:
                 src_domain = ""
-            match = next((rid for rid, t in recent if rid == item_id or SequenceMatcher(None, t, key).ratio() >= 0.88), None)
+            match = seen.match(item_id, key)
             if match:  # same story from another outlet: record the outlet, count distinct outlets
                 db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)",
                            (match, src_name, src_domain or src_name.lower(), e.get("link", ""), now_iso()))
@@ -232,7 +295,7 @@ def collect(cfg, db, sources=None):
                         e.get("published", "") or e.get("updated", ""), summary, label, now_iso()))
             db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)",
                        (item_id, src_name, src_domain or src_name.lower(), e.get("link", ""), now_iso()))
-            recent.append((item_id, key))
+            seen.add(item_id, key)
             added += 1
     db.commit()
     print(f"collect: {added} new, {dup} duplicates merged, {skipped} off-topic skipped")
@@ -247,11 +310,11 @@ Reply with ONLY a JSON array of the ids to keep, e.g. ["a1","b2"]."""
 
 
 def analysis_prompt(cfg):
-    leaders = "\n".join(f"- {k}: {v}" for k, v in cfg["leaders"].items())
+    leaders = "\n".join(f"- {k} ({v['name']}): {v['remit']}" for k, v in cfg["functions"].items())
     return f"""You are the market intelligence analyst for a global iron ore, pellet and steel radar.
 Write every "so what" from this perspective: {cfg['perspective']}
 
-Leaders you serve:
+Functions you serve:
 {leaders}
 
 Watch areas: {", ".join(cfg['watch_areas'])}
@@ -266,13 +329,14 @@ Rules:
 - confidence 1-10: official release or hard data high; opinion, forecast or rumour low.
 - signal: "tailwind" if it likely helps a pellet and steel producer's margins or position, "headwind" if it
   likely hurts, "neutral" if mixed or unclear.
-- leaders: only those whose decisions this could change (from {", ".join(LEADERS)}).
+- functions: only those whose decisions this could change (codes from {", ".join(cfg["functions"])}).
+- hashtags: 2 to 4, preferably from {", ".join(cfg["hashtags"])}; add a new CamelCase hashtag only for a clearly new theme.
 - region: one value from the regions list.
 - what_happened: max 30 words, factual. so_what: max 35 words. action: max 20 words, starts with a verb, or "".
 
 Reply with ONLY a JSON array, one object per headline:
 [{{"id": "...", "relevant": true, "watch_area": "...", "event_type": "2-3 words", "companies": ["..."],
-   "countries": ["..."], "region": "...", "leaders": ["CEO"], "signal": "tailwind", "impact": 7,
+   "countries": ["..."], "region": "...", "functions": ["GOV"], "hashtags": ["#IronOre"], "signal": "tailwind", "impact": 7,
    "confidence": 8, "what_happened": "...", "so_what": "...", "action": "..."}}]"""
 
 
@@ -324,7 +388,8 @@ def fallback_analysis(row, cfg):
         area = max(scores, key=scores.get) if max(scores.values()) else "Supply and demand"
     return {"relevant": True, "watch_area": area, "event_type": "Headline",
             "companies": [c for c in cfg["companies"] if c.lower() in text][:3], "countries": [],
-            "region": guess_region(text), "leaders": AREA_LEADERS.get(area, ["CEO"]), "signal": "neutral",
+            "region": guess_region(text), "functions": AREA_FUNCTIONS.get(area, ["GOV"]), "signal": "neutral",
+            "hashtags": [t for t, kws in FALLBACK_TAGS.items() if any(k in text for k in kws)][:4] or ["#Steel"],
             "impact": min(10, 3 + 2 * sum(w in text for w in HIGH_WORDS)), "confidence": 4,
             "what_happened": row["title"],
             "so_what": "AI analysis is off. Add ANTHROPIC_API_KEY to get the impact and so-what.", "action": ""}
@@ -337,12 +402,12 @@ def save_insight(db, item_id, a, by, cfg, source_text=""):
     missing = figure_check(a.get("what_happened", ""), source_text) if source_text else []
     if missing:  # the AI wrote a figure the source does not contain
         checks.append(f"Figures not in source: {', '.join(missing[:4])}")
-    db.execute("INSERT OR REPLACE INTO insights VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+    db.execute("INSERT OR REPLACE INTO insights VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
         item_id, int(bool(a.get("relevant"))), a.get("watch_area", ""), a.get("event_type", ""),
         json.dumps(a.get("companies", [])), json.dumps(a.get("countries", [])), region,
-        json.dumps([l for l in a.get("leaders", []) if l in LEADERS]), signal,
+        json.dumps(norm_functions(a.get("functions") or a.get("leaders"), cfg)), signal,
         clamp(a.get("impact")), clamp(a.get("confidence")), a.get("what_happened", ""),
-        a.get("so_what", ""), a.get("action", ""), by, now_iso(), json.dumps(checks)))
+        a.get("so_what", ""), a.get("action", ""), by, now_iso(), json.dumps(checks), json.dumps(norm_tags(a.get("hashtags")))))
     db.execute("UPDATE items SET analysed = 1 WHERE id = ?", (item_id,))
 
 
@@ -364,10 +429,10 @@ def triage(cfg, client, model, rows):
     return keep
 
 
-def analyse(cfg, db):
+def analyse(cfg, db, max_items=None):
     s = cfg["settings"]
     rows = db.execute("SELECT * FROM items WHERE analysed = 0 ORDER BY first_seen LIMIT ?",
-                      (s.get("max_items_per_run", 500),)).fetchall()
+                      (max_items or s.get("max_items_per_run", 500),)).fetchall()
     if not rows:
         print("analyse: nothing new")
         return 0
@@ -492,15 +557,20 @@ def item_date(published, first_seen):
 def load_items(db, history_days, cfg):
     """All relevant signals first seen in the last `history_days`, plus headlines scanned per day."""
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=history_days)).isoformat()
-    scanned = {r[0]: r[1] for r in db.execute(
-        "SELECT substr(first_seen,1,10), COUNT(*) FROM items WHERE first_seen >= ? GROUP BY 1", (since,))}
+    cutoff = (dt.date.today() - dt.timedelta(days=history_days)).isoformat()
+    scanned = {}
+    for r in db.execute("SELECT published, first_seen FROM items WHERE first_seen >= ?", (since,)):
+        d = item_date(r["published"], r["first_seen"])
+        if d >= cutoff:
+            scanned[d] = scanned.get(d, 0) + 1
     rows = db.execute("""SELECT i.*, n.* FROM items i JOIN insights n ON n.item_id = i.id
                          WHERE i.first_seen >= ? AND n.relevant = 1 ORDER BY n.impact DESC, i.first_seen DESC""",
                       (since,)).fetchall()
     srcs = {}
     for s_ in db.execute("SELECT * FROM item_sources WHERE seen_at >= ? ORDER BY seen_at", (since,)):
         srcs.setdefault(s_["item_id"], []).append(s_)
-    return scanned, [finalise(r, srcs.get(r["id"], []), cfg) for r in rows]
+    items = [finalise(r, srcs.get(r["id"], []), cfg) for r in rows]
+    return scanned, [x for x in items if x["date"] >= cutoff]
 
 
 def finalise(r, source_rows, cfg):
@@ -521,7 +591,8 @@ def finalise(r, source_rows, cfg):
         "date": item_date(r["published"], r["first_seen"]), "first_seen": r["first_seen"][:10],
         "coverage": r["coverage"], "watch_area": r["watch_area"], "event_type": r["event_type"],
         "companies": json.loads(r["companies"] or "[]"), "countries": json.loads(r["countries"] or "[]"),
-        "region": r["region"] or "Global", "leaders": json.loads(r["leaders"] or "[]"), "signal": r["signal"] or "neutral",
+        "region": r["region"] or "Global", "leaders": norm_functions(json.loads(r["leaders"] or "[]"), cfg),
+        "tags": norm_tags(json.loads(r["tags"] or "[]") if "tags" in r.keys() else []), "signal": r["signal"] or "neutral",
         "impact": r["impact"], "confidence": r["confidence"], "what_happened": r["what_happened"],
         "so_what": r["so_what"], "action": r["action"], "sources": sources[:8], "outlets": len(sources),
         "verification": status, "checks": checks, "confidence": conf}
@@ -554,7 +625,7 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None):
     inline = [x for x in items if x["date"] >= start]
     data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
             "default_days": days, "day_list": day_list, "inline_days": inline_days,
-            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "leaders": cfg["leaders"], "areas": cfg["watch_areas"],
+            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "functions": cfg["functions"], "pinned_hashtags": cfg.get("pinned_hashtags", []), "areas": cfg["watch_areas"],
             "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets()}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
@@ -566,9 +637,9 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None):
     lines = [f"# Ore & Steel Radar brief, {today}", "",
              f"{sum(scanned_by_day.get(d, 0) for d in inline_days)} headlines scanned, {len(inline)} relevant signals "
              f"({start} to {latest}).", ""]
-    for leader in LEADERS:
-        top = [x for x in recent if leader in x["leaders"] and x["impact"] >= min_imp][:5]
-        lines.append(f"## {leader}")
+    for code, fn in cfg["functions"].items():
+        top = [x for x in recent if code in x["leaders"] and x["impact"] >= min_imp][:5]
+        lines.append(f"## {fn['name']}")
         if not top:
             lines.append("- Nothing above the impact threshold.")
         for x in top:
@@ -599,11 +670,28 @@ def demo(cfg):
                               key=lambda s_: ["official", "tier1", "tier2", "tier3"].index(s_["tier"]))
         x["outlets"] = len(x["sources"])
         x["coverage"] = x["outlets"]
+        x["leaders"] = norm_functions(x.get("leaders"), cfg)
+        x["tags"] = norm_tags(x.get("tags"))
         x["verification"] = verification(x["sources"])
         x.setdefault("checks", [])
         x["confidence"] = min(x["confidence"], 5) if x["verification"] == "unconfirmed" else min(x["confidence"], 7) if x["verification"] == "single" else x["confidence"]
     return write_reports(cfg, {items[0]["first_seen"]: data["scanned"]}, items, data.get("days", 7), data.get("note", ""),
                          data.get("markets", {}))
+
+
+# ---------------------------------------------------------------- backfill
+def backfill(cfg, db, days=120, step=14, max_items=4000):
+    """One-off history load: run every search over two-week windows covering the last `days` days."""
+    end = dt.date.today()
+    start = end - dt.timedelta(days=days)
+    total = 0
+    while start < end:
+        stop = min(start + dt.timedelta(days=step), end + dt.timedelta(days=1))
+        print(f"backfill: {start} to {stop}")
+        total += collect(cfg, db, build_sources(cfg, (start.isoformat(), stop.isoformat())), pause=0.7, dedupe_days=days + 14)
+        start = stop
+    print(f"backfill: {total} headlines collected over {days} days")
+    analyse(cfg, db, max_items)
 
 
 # ---------------------------------------------------------------- hosting
@@ -654,7 +742,8 @@ def serve(cfg, port, daily, days):
 # ---------------------------------------------------------------- CLI
 def main():
     ap = argparse.ArgumentParser(description="Ore & Steel Radar")
-    ap.add_argument("command", choices=["run", "collect", "analyse", "markets", "report", "demo", "serve"])
+    ap.add_argument("command", choices=["run", "collect", "analyse", "markets", "report", "demo", "serve", "backfill"])
+    ap.add_argument("--max", type=int, default=4000, help="max headlines analysed by backfill")
     ap.add_argument("--config", default=str(ROOT / "config.yaml"))
     ap.add_argument("--days", type=int, default=None, help="dashboard window in days (default: settings.report_days)")
     ap.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")))
@@ -672,6 +761,10 @@ def main():
         serve(cfg, args.port, args.daily, days)
         return
     db = connect(str(ROOT / cfg["settings"].get("db_path", "data/radar.db")))
+    if args.command == "backfill":
+        backfill(cfg, db, args.days or 120, max_items=args.max)
+        report(cfg, db, cfg["settings"].get("report_days", 7))
+        return
     sources = [("test", f) for f in args.feeds] if args.feeds else None
     if args.command in ("run", "collect"):
         collect(cfg, db, sources)

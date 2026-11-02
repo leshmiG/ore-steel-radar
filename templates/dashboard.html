@@ -70,7 +70,25 @@ a{color:var(--tail)}
     linear-gradient(90deg,rgba(14,22,33,.045) 1px,transparent 1px) 0 0/32px 32px,var(--bg)}
 #scene{position:absolute;inset:0;width:100%;height:100%;display:block}
 .hero::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,var(--bg) 0%,rgba(243,245,248,.9) 32%,rgba(243,245,248,.25) 60%,rgba(243,245,248,0) 100%)}
-.hero .inner{position:relative;z-index:2;padding-block:52px 40px;display:grid;gap:26px}
+.hero .inner{position:relative;z-index:2;padding-block:48px 40px;display:grid;gap:26px;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}
+.hero .left{display:grid;gap:24px;min-width:0}
+.top10{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;min-width:0}
+.top10 h2{font:800 20px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px;color:var(--steel)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tag{appearance:none;cursor:pointer;border:1px solid var(--line-2);background:var(--surface);color:var(--steel);border-radius:999px;padding:4px 10px;font:600 12px var(--mono);display:inline-flex;gap:6px;align-items:center}
+.tag small{font:500 10.5px var(--mono);color:var(--muted)}
+.tag .up{color:#1f5f3a}
+.tag[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff}
+.tag[aria-pressed="true"] small,.tag[aria-pressed="true"] .up{color:#c9d1da}
+.t10{list-style:none;margin:0;padding:0;display:grid;gap:2px;counter-reset:t}
+.t10 li{display:grid;grid-template-columns:22px 26px minmax(0,1fr);gap:8px;align-items:start;padding:7px 4px;border-top:1px solid var(--line);counter-increment:t}
+.t10 li::before{content:counter(t);font:800 16px/1.3 var(--display);color:var(--faint);text-align:right}
+.t10 .imp{font:800 13px/1 var(--display);color:#fff;border-radius:6px;text-align:center;padding:4px 0;margin-top:1px}
+.t10 a{color:var(--ink);text-decoration:none;font-weight:600;font-size:13.5px;line-height:1.35}
+.t10 a:hover{color:var(--tail)}
+.t10 .src{display:block;font:11.5px var(--mono);color:var(--muted);margin-top:2px}
+.htag{font:600 11px var(--mono);color:var(--steel-mid)}
+@media (max-width:980px){.hero .inner{grid-template-columns:1fr}}
 .eyebrow{font:600 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--steel-mid)}
 h1{font:900 clamp(44px,7vw,88px)/.92 var(--display);letter-spacing:.005em;text-transform:uppercase;margin:10px 0 14px;max-width:14ch;text-wrap:balance;color:var(--steel)}
 h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%,#aeb7c1 52%,#4b5866 70%,#1f2933 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -78,8 +96,8 @@ h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%
 @keyframes sheen{0%,100%{background-position:0 0}50%{background-position:100% 0}}
 .lede{max-width:58ch;color:var(--muted);font-size:17px;margin:0}
 .lede strong{color:var(--ink);font-weight:600}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;max-width:1000px}
-.kpi{background:rgba(255,255,255,.82);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi{background:rgba(255,255,255,.93);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
 .kpi b{display:block;font:800 40px/1 var(--display);font-variant-numeric:tabular-nums;color:var(--steel)}
 .kpi span{font:500 11.5px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .kpi.act b{color:var(--heat-act)} .kpi.tail b{color:var(--tail)} .kpi.head b{color:var(--head)}
@@ -233,13 +251,20 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 <section class="hero gutter">
   <canvas id="scene" aria-hidden="true"></canvas>
   <div class="inner">
-    <div>
-      <div class="eyebrow">Iron ore · Pellets · DRI · Steel · Worldwide</div>
-      <h1>What moved <em>ore &amp; steel</em> <span id="when">this week</span></h1>
-      <p class="lede" id="lede"></p>
+    <div class="left">
+      <div>
+        <div class="eyebrow">Iron ore · Pellets · DRI · Steel · Strait of Hormuz · Worldwide</div>
+        <h1>What moved <em>ore &amp; steel</em> <span id="when">this week</span></h1>
+        <p class="lede" id="lede"></p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <p class="note" id="note" hidden></p>
     </div>
-    <div class="kpis" id="kpis"></div>
-    <p class="note" id="note" hidden></p>
+    <aside class="top10" aria-label="Top 10 news by hashtag">
+      <h2>Top 10 · trending</h2>
+      <div class="tags" id="tagChips"></div>
+      <ol class="t10" id="top10"></ol>
+    </aside>
   </div>
 </section>
 
@@ -252,8 +277,8 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   </div></section>
   <section class="section gutter"><div class="inner">
     <h2>Your briefing</h2>
-    <p class="sub">Pick a leader to filter every call, chart and signal on this page.</p>
-    <div class="leaders" role="group" aria-label="Leader" id="leaders"></div>
+    <p class="sub">Pick a function to filter every call, chart and signal on this page.</p>
+    <div class="leaders" role="group" aria-label="Function" id="leaders"></div>
     <div class="remit" id="remit"></div>
     <div class="compbar" id="compbar">
       <span class="lbl">Competitors</span>
@@ -274,10 +299,8 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
     <h2>The picture</h2>
     <p class="sub" id="chartsSub"></p>
     <div class="charts">
-      <article class="panel wide" id="p-flow"><header><div><h3>Signal flow</h3><p class="insight" id="i-flow"></p></div><button class="tbtn" data-t="flow">Table</button></header><div class="canvas-box" style="height:240px"><canvas id="c-flow" role="img" aria-label="Signals per day by impact band"></canvas></div><div class="tablewrap" hidden id="t-flow"></div></article>
+      <article class="panel wide" id="p-tags"><header><div><h3>Trending hashtags</h3><p class="insight" id="i-tags"></p></div><button class="tbtn" data-t="tags">Table</button></header><div class="canvas-box" style="height:280px"><canvas id="c-tags" role="img" aria-label="Most used hashtags in the period"></canvas></div><div class="tablewrap" hidden id="t-tags"></div></article>
       <article class="panel" id="p-area"><header><div><h3>Where the pressure is</h3><p class="insight" id="i-area"></p></div><button class="tbtn" data-t="area">Table</button></header><div class="canvas-box tall"><canvas id="c-area" role="img" aria-label="Total impact by watch area"></canvas></div><div class="tablewrap" hidden id="t-area"></div></article>
-      <article class="panel" id="p-matrix"><header><div><h3>Signal matrix</h3><p class="insight" id="i-matrix"></p></div><button class="tbtn" data-t="matrix">Table</button></header><div class="canvas-box tall"><canvas id="c-matrix" role="img" aria-label="Impact against confidence for every signal"></canvas></div><div class="tablewrap" hidden id="t-matrix"></div></article>
-      <article class="panel" id="p-wind"><header><div><h3>Tailwinds vs headwinds</h3><p class="insight" id="i-wind"></p></div><button class="tbtn" data-t="wind">Table</button></header><div class="canvas-box"><canvas id="c-wind" role="img" aria-label="Tailwind and headwind signals by watch area"></canvas></div><div class="tablewrap" hidden id="t-wind"></div></article>
       <article class="panel" id="p-companies"><header><div><h3>Who's making news</h3><p class="insight" id="i-companies"></p></div><button class="tbtn" data-t="companies">Table</button></header><div class="canvas-box"><canvas id="c-companies" role="img" aria-label="Companies with the most signals"></canvas></div><div class="tablewrap" hidden id="t-companies"></div></article>
       <article class="panel wide" id="p-regions"><header><div><h3>Where it's happening</h3><p class="insight" id="i-regions"></p></div><button class="tbtn" data-t="regions">Table</button></header><div class="canvas-box" style="height:260px"><canvas id="c-regions" role="img" aria-label="Signals by region"></canvas></div><div class="tablewrap" hidden id="t-regions"></div></article>
     </div>
@@ -285,10 +308,14 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 
   <section class="section gutter" style="padding-top:8px"><div class="inner">
     <h2>All signals</h2>
-    <p class="sub">Sorted by impact. Every signal links to its source.</p>
+    <p class="sub">Showing impact 7 and above by default; use the impact filter to see the rest. Every signal links to its sources.</p>
     <div class="filters">
       <select id="fArea" aria-label="Watch area"></select>
       <select id="fRegion" aria-label="Region"></select>
+      <select id="fImp" aria-label="Impact">
+        <option value="7">Impact 7 and above</option><option value="5">Impact 5 and above</option><option value="1">All impact levels</option>
+      </select>
+      <select id="fTag" aria-label="Hashtag"></select>
       <select id="fVer" aria-label="Verification">
         <option value="All">All signals</option><option value="verified">Verified only</option><option value="credible">Hide unconfirmed</option>
       </select>
@@ -319,8 +346,8 @@ const C = {ink:css("--ink"), muted:css("--muted"), faint:css("--faint"), line:cs
   act:css("--heat-act"), watch:css("--heat-watch"), note:css("--heat-note"), surface:css("--surface")};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const band = n => n >= 8 ? "act" : n >= 5 ? "watch" : "note";
-const BAND_LABEL = {act:"Act now (8-10)", watch:"Watch (5-7)", note:"Note (1-4)"};
 const SIG = {tailwind:{icon:"▲", label:"Tailwind"}, headwind:{icon:"▼", label:"Headwind"}, neutral:{icon:"●", label:"Neutral"}};
+const FN_SHORT = {GOV:"Governance", FIN:"Finance & Risk", SCM:"Supply Chain", INN:"Innovation"};
 const SHORT = {"Markets and prices":"Markets","Supply and demand":"Supply & demand","Technology and process":"Technology",
   "Policy and regulation":"Policy","Customers and end markets":"Customers","Suppliers and logistics":"Logistics",
   "Research and innovation":"Research","Macro and geopolitics":"Macro","Competitors":"Competitors"};
@@ -335,7 +362,7 @@ const FIRST = DAYS[0] || DATA.latest, LAST = DATA.latest;
 const SCANNED = Object.fromEntries(DATA.day_list.map(d => [d.date, d.scanned]));
 const LOADED = new Set(DATA.inline_days);
 let ALL = DATA.items.slice();
-const state = {leader:"All", area:"All", region:"All", signal:"All", ver:"All", q:"", preset:String(DATA.default_days || 7),
+const state = {leader:"All", area:"All", region:"All", signal:"All", ver:"All", imp:7, ftag:"All", tag:null, q:"", preset:String(DATA.default_days || 7),
   from:addDays(LAST, -((DATA.default_days || 7) - 1)), to:LAST};
 const inRange = x => x.date >= state.from && x.date <= state.to;
 /* competitor selection: a signal matches when it names a selected company (or mentions it in the headline) */
@@ -408,20 +435,19 @@ function renderTicker(){
 
 function renderHero(){
   const p = pool();
-  const act = p.filter(x => x.impact >= 8).length, tw = p.filter(x => x.signal === "tailwind").length, hw = p.filter(x => x.signal === "headwind").length;
+  const high = p.filter(x => x.impact >= 7).length, tw = p.filter(x => x.signal === "tailwind").length, hw = p.filter(x => x.signal === "headwind").length;
   const scanned = DAYS.filter(d => d >= state.from && d <= state.to).reduce((s, d) => s + (SCANNED[d] || 0), 0);
   const cos = new Set(p.flatMap(x => x.companies)).size;
   const balance = hw > tw ? `headwinds outnumber tailwinds <strong>${hw} to ${tw}</strong>` : tw > hw ? `tailwinds outnumber headwinds <strong>${tw} to ${hw}</strong>` : `tailwinds and headwinds are level at <strong>${tw} each</strong>`;
   const coNames = [...SEL];
-  const who = (state.leader === "All" ? "" : ` for the <strong>${state.leader}</strong>`) + (coNames.length ? ` on <strong>${esc(coNames.slice(0, 3).join(", "))}${coNames.length > 3 ? ` +${coNames.length - 3}` : ""}</strong>` : "");
+  const who = (state.leader === "All" ? "" : ` for <strong>${esc(DATA.functions[state.leader].name)}</strong>`) + (coNames.length ? ` on <strong>${esc(coNames.slice(0, 3).join(", "))}${coNames.length > 3 ? ` +${coNames.length - 3}` : ""}</strong>` : "");
   document.getElementById("lede").innerHTML = p.length
-    ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${act}</strong> need${act === 1 ? "s" : ""} action now and ${balance}.`
+    ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${high}</strong> ${high === 1 ? "is" : "are"} high impact (7+) and ${balance}.`
     : `No signals${who} in this period. Try a longer period or another leader.`;
   const ver = p.filter(x => x.verification === "verified").length;
   const outlets = new Set(p.flatMap(x => (x.sources || []).map(o => o.domain || o.name))).size;
-  const tiles = [["", scanned, "Headlines scanned"], ["", p.length, "Signals kept"], ["act", act, "Act now (8+)"],
-    ["", ver, "✓ Verified"], ["tail", tw, "▲ Tailwinds"], ["head", hw, "▼ Headwinds"], ["", outlets, "Outlets reporting"], ["", cos, "Companies named"]];
-  document.getElementById("kpis").style.maxWidth = "1240px";
+  const tiles = [["", scanned, "Headlines scanned"], ["", p.length, "Signals kept"], ["act", high, "High impact (7+)"],
+    ["", ver, "✓ Verified"], ["", outlets, "Outlets reporting"], ["", cos, "Companies named"]];
   document.getElementById("kpis").innerHTML = tiles.map(([c, v, l], i) => `<div class="kpi pop ${c}" style="--d:${i * 60}ms"><b>${v}</b><span>${l}</span></div>`).join("");
 }
 
@@ -471,14 +497,14 @@ document.getElementById("coQ").oninput = renderPicker;
 
 function renderLeaders(){
   const inP = ALL.filter(x => inRange(x) && matchCo(x));
-  document.getElementById("leaders").innerHTML = ["All", ...Object.keys(DATA.leaders)].map(l => {
+  document.getElementById("leaders").innerHTML = ["All", ...Object.keys(DATA.functions)].map(l => {
     const n = l === "All" ? inP.length : inP.filter(x => x.leaders.includes(l)).length;
-    return `<button class="lead" aria-pressed="${state.leader === l}" data-l="${l}">${l === "All" ? "Everyone" : l}<small>${n}</small></button>`;
+    return `<button class="lead" aria-pressed="${state.leader === l}" data-l="${l}">${l === "All" ? "All functions" : esc(DATA.functions[l].name)}<small>${n}</small></button>`;
   }).join("");
   document.querySelectorAll(".lead").forEach(b => b.onclick = () => { state.leader = b.dataset.l; renderAll(); });
   document.getElementById("remit").innerHTML = state.leader === "All"
-    ? "Showing every signal. Each one is routed to the leaders whose decisions it could change."
-    : `<b>${state.leader}</b> · ${esc(DATA.leaders[state.leader])}`;
+    ? "Showing every signal. Each one is routed to the functions whose decisions it could change."
+    : `<b>${esc(DATA.functions[state.leader].name)}</b> · ${esc(DATA.functions[state.leader].remit)}`;
 }
 
 function gauge(n, size = 52){
@@ -526,35 +552,20 @@ document.querySelectorAll(".tbtn").forEach(b => b.onclick = () => {
   const t = document.getElementById(`t-${b.dataset.t}`); t.hidden = !t.hidden; t.innerHTML = tables[b.dataset.t] || "";
   b.textContent = t.hidden ? "Table" : "Hide table";
 });
-const actZone = {id:"actZone", beforeDatasetsDraw(chart){
-  const {ctx, chartArea:a, scales:{y}} = chart; if (!y) return;
-  const top = y.getPixelForValue(10.5), bot = y.getPixelForValue(7.5);
-  ctx.save(); ctx.fillStyle = "rgba(168,51,11,.06)"; ctx.fillRect(a.left, top, a.right - a.left, bot - top);
-  ctx.strokeStyle = "rgba(168,51,11,.35)"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(a.left, bot); ctx.lineTo(a.right, bot); ctx.stroke();
-  ctx.setLineDash([]); ctx.fillStyle = C.act; ctx.font = "800 13px 'Big Shoulders Display', 'Arial Narrow', sans-serif"; ctx.textAlign = "right";
-  ctx.fillText("ACT NOW", a.right - 6, top + 16); ctx.restore();
-}};
-
 function renderCharts(){
   const p = pool();
   const grid = {color:C.line, drawTicks:false}, ticks = {color:C.muted, font:{family:MONO, size:11}, padding:6};
-  document.getElementById("chartsSub").textContent = `${p.length} signals${state.leader === "All" ? "" : " for the " + state.leader}, ${document.getElementById("rangeLabel").textContent}.`;
+  document.getElementById("chartsSub").textContent = `${p.length} signals${state.leader === "All" ? "" : " for " + DATA.functions[state.leader].name}, ${document.getElementById("rangeLabel").textContent}.`;
 
-  // Signal flow: every day in the period, stacked by impact band; click a day to drill in
-  const days = []; for (let d = state.from; d <= state.to; d = addDays(d, 1)) days.push(d);
-  const series = ["note", "watch", "act"].map(b => ({label:BAND_LABEL[b], data:days.map(d => p.filter(x => x.date === d && band(x.impact) === b).length),
-    backgroundColor:C[b], borderRadius:3, borderSkipped:false, borderColor:C.surface, borderWidth:{top:2}, maxBarThickness:42}));
-  const totals = days.map((d, i) => series.reduce((s, x) => s + x.data[i], 0));
-  const peak = totals.indexOf(Math.max(...totals));
-  document.getElementById("i-flow").innerHTML = days.length > 1 && p.length
-    ? `Busiest day: <b>${fmt(days[peak])}</b> with ${totals[peak]} signals. Click a day to see only that day.`
-    : `Signals on ${fmt(state.from, true)}, by impact band.`;
-  upsert("flow", "bar", {labels:days.map(d => fmt(d)), datasets:series},
-    baseOpts({scales:{x:{stacked:true, grid:{display:false}, ticks:{...ticks, maxRotation:0, autoSkip:true}}, y:{stacked:true, grid, ticks:{...ticks, precision:0}}},
-      plugins:{legend:legend(true), tooltip:tip},
-      onClick:(e, els) => { if (els.length && days.length > 1) { const d = days[els[0].index]; state.preset = "custom"; state.from = state.to = d; apply(); } },
-      onHover:(e, els) => { e.native.target.style.cursor = els.length && days.length > 1 ? "pointer" : "default"; }}));
-  setTable("flow", ["Day", ...series.map(s => s.label)], days.map((d, i) => [d, ...series.map(s => s.data[i])]));
+  // Trending hashtags
+  const tr = trending().sort((a, b) => b.n - a.n || b.rise - a.rise).slice(0, 12);
+  const riser = [...tr].sort((a, b) => b.rise - a.rise)[0];
+  document.getElementById("i-tags").innerHTML = tr.length ? `Most used: <b>${esc(tr[0].tag)}</b> (${tr[0].n} signals).${riser && riser.prev ? ` Fastest rising: <b>${esc(riser.tag)}</b> (+${riser.rise} vs the previous period).` : ""} Hashtags come from the news itself, not social media.` : "No hashtags in this period.";
+  upsert("tags", "bar", {labels:tr.map(t => t.tag), datasets:[{label:"Signals", data:tr.map(t => t.n), backgroundColor:tr.map(t => t.tag === "#StraitOfHormuz" ? C.head : C.steelMid), borderRadius:4, borderSkipped:false, barThickness:14}]},
+    baseOpts({indexAxis:"y", scales:{x:{grid, ticks:{...ticks, precision:0}}, y:{grid:{display:false}, ticks:{...ticks, color:C.ink}}},
+      plugins:{legend:legend(false), tooltip:{...tip, callbacks:{label:c => { const t = tr[c.dataIndex]; return `${t.n} signals · ${t.prev} in the previous period`; }}}},
+      onClick:(e, els) => { if (els.length) { state.tag = tr[els[0].index].tag; renderTop10(); document.querySelector(".hero").scrollIntoView({behavior:REDUCED ? "auto" : "smooth"}); } }}));
+  setTable("tags", ["Hashtag", "Signals", "Previous period", "Change"], tr.map(t => [t.tag, t.n, t.prev, (t.rise > 0 ? "+" : "") + t.rise]));
 
   // Pressure by watch area (radar)
   const areaSum = DATA.areas.map(a => p.filter(x => x.watch_area === a).reduce((s, x) => s + x.impact, 0));
@@ -565,32 +576,6 @@ function renderCharts(){
     baseOpts({scales:{r:{beginAtZero:true, grid:{color:C.line}, angleLines:{color:C.line}, ticks:{display:false},
       pointLabels:{color:C.ink, font:{family:MONO, size:11}}}}}));
   setTable("area", ["Watch area", "Signals", "Total impact"], DATA.areas.map((a, i) => [a, p.filter(x => x.watch_area === a).length, areaSum[i]]));
-
-  // Signal matrix: impact vs confidence, colour + shape = tailwind / headwind / neutral
-  const jitter = (i, k) => (((i * k) % 9) - 4) * 0.07;
-  const sets = [["tailwind", C.tail, "triangle", 0], ["headwind", C.head, "triangle", 180], ["neutral", C.neutral, "circle", 0]];
-  const hi = p.filter(x => x.impact >= 8 && x.confidence >= 7).length;
-  document.getElementById("i-matrix").innerHTML = `<b>${hi}</b> high-impact, high-confidence signal${hi === 1 ? "" : "s"} in the top-right corner.`;
-  upsert("matrix", "scatter", {datasets:sets.map(([s, col, shape, rot]) => ({label:SIG[s].label, data:p.map((x, i) => [x, i]).filter(([x]) => x.signal === s)
-      .map(([x, i]) => ({x:x.confidence + jitter(i, 37), y:x.impact + jitter(i, 53), item:x})),
-      backgroundColor:col, borderColor:C.surface, borderWidth:2, pointStyle:shape, rotation:rot, pointRadius:8, pointHoverRadius:11}))},
-    baseOpts({scales:{x:{min:0, max:10.5, title:{display:true, text:"Confidence", color:C.muted, font:{family:MONO, size:11}}, grid, ticks:{...ticks, stepSize:2}},
-      y:{min:0, max:10.5, title:{display:true, text:"Impact", color:C.muted, font:{family:MONO, size:11}}, grid, ticks:{...ticks, stepSize:2}}},
-      plugins:{legend:legend(true), tooltip:{...tip, callbacks:{title:c => c[0].raw.item.what_happened.slice(0, 90) + (c[0].raw.item.what_happened.length > 90 ? "…" : ""),
-        label:c => `impact ${c.raw.item.impact} · confidence ${c.raw.item.confidence} · ${c.raw.item.source}`}}}}), [actZone]);
-  setTable("matrix", ["Signal", "Impact", "Confidence", "Type"], [...p].sort((a, b) => b.impact - a.impact).map(x => [x.what_happened, x.impact, x.confidence, SIG[x.signal].label]));
-
-  // Tailwinds vs headwinds (diverging)
-  const tw = DATA.areas.map(a => p.filter(x => x.watch_area === a && x.signal === "tailwind").length);
-  const hw = DATA.areas.map(a => p.filter(x => x.watch_area === a && x.signal === "headwind").length);
-  const net = DATA.areas.map((a, i) => tw[i] - hw[i]); const worst = net.indexOf(Math.min(...net)), best = net.indexOf(Math.max(...net));
-  document.getElementById("i-wind").innerHTML = p.length ? `Biggest headwind: <b>${esc(SHORT[DATA.areas[worst]])}</b>. Biggest tailwind: <b>${esc(SHORT[DATA.areas[best]])}</b>.` : "";
-  upsert("wind", "bar", {labels:DATA.areas.map(a => SHORT[a] || a), datasets:[
-      {label:"▼ Headwinds", data:hw.map(v => -v), backgroundColor:C.head, borderRadius:4, borderSkipped:false, barThickness:14},
-      {label:"▲ Tailwinds", data:tw, backgroundColor:C.tail, borderRadius:4, borderSkipped:false, barThickness:14}]},
-    baseOpts({indexAxis:"y", scales:{x:{stacked:true, grid, ticks:{...ticks, precision:0, callback:v => Math.abs(v)}}, y:{stacked:true, grid:{display:false}, ticks}},
-      plugins:{legend:legend(true), tooltip:{...tip, callbacks:{label:c => `${c.dataset.label}: ${Math.abs(c.raw)}`}}}}));
-  setTable("wind", ["Watch area", "Tailwinds", "Headwinds", "Net"], DATA.areas.map((a, i) => [a, tw[i], hw[i], net[i]]));
 
   // Companies in the news (bar colour = average impact band)
   const cm = {}; p.forEach(x => x.companies.forEach(c => { (cm[c] ||= {n:0, s:0}); cm[c].n++; cm[c].s += x.impact; }));
@@ -614,19 +599,26 @@ function renderCharts(){
 function fillSelect(id, all, opts){ document.getElementById(id).innerHTML = [`<option value="All">${all}</option>`, ...opts.map(o => `<option value="${esc(o)}">${esc(o)}</option>`)].join(""); }
 fillSelect("fArea", "All watch areas", DATA.areas);
 fillSelect("fRegion", "All regions", DATA.regions);
-[["fArea", "area"], ["fRegion", "region"], ["fSignal", "signal"], ["fVer", "ver"]].forEach(([id, k]) => document.getElementById(id).onchange = e => { state[k] = e.target.value; renderFeed(); });
+function fillTagSelect(){
+  const sel = document.getElementById("fTag"), cur = state.ftag;
+  const tags = [...new Set(ALL.flatMap(x => x.tags || []))].sort();
+  fillSelect("fTag", "All hashtags", tags); sel.value = tags.includes(cur) ? cur : "All"; state.ftag = sel.value;
+}
+[["fArea", "area"], ["fRegion", "region"], ["fSignal", "signal"], ["fVer", "ver"], ["fTag", "ftag"]].forEach(([id, k]) => document.getElementById(id).onchange = e => { state[k] = e.target.value; renderFeed(); });
+document.getElementById("fImp").onchange = e => { state.imp = Number(e.target.value); renderFeed(); };
 document.getElementById("fQ").oninput = e => { state.q = e.target.value.toLowerCase(); renderFeed(); };
 
 function renderFeed(){
   const base = pool();
   const list = base.filter(x => (state.area === "All" || x.watch_area === state.area) && (state.region === "All" || x.region === state.region) &&
+    x.impact >= state.imp && (state.ftag === "All" || (x.tags || []).includes(state.ftag)) &&
     (state.signal === "All" || x.signal === state.signal) &&
     (state.ver === "All" || (state.ver === "verified" ? x.verification === "verified" : x.verification !== "unconfirmed")) &&
     (!state.q || [x.title, x.what_happened, x.so_what, x.companies.join(" "), x.countries.join(" "), x.region, x.watch_area].join(" ").toLowerCase().includes(state.q)))
     .sort((a, b) => b.impact - a.impact || (b.date > a.date ? 1 : -1));
   document.getElementById("count").textContent = `${list.length} of ${base.length} signals · ${document.getElementById("rangeLabel").textContent}`;
   const feed = document.getElementById("feed");
-  if (!list.length) { feed.innerHTML = `<div class="empty">No signals match these filters. Try a longer period, clear the search, or pick another region.</div>`; return; }
+  if (!list.length) { feed.innerHTML = `<div class="empty">No signals match these filters. Try "All impact levels", a longer period, or clear the search.</div>`; return; }
   feed.innerHTML = list.map((x, i) => `<article class="card pop" style="--d:${Math.min(i, 10) * 45}ms;--sev:var(--heat-${band(x.impact)})">
     <div class="gauge">${gauge(x.impact)}<span>Impact</span></div>
     <div class="cbody">
@@ -634,8 +626,9 @@ function renderFeed(){
       <p class="what">${esc(x.what_happened)}</p>
       <dl class="kv"><dt>So what</dt><dd>${esc(x.so_what)}</dd></dl>
       ${x.action ? `<dl class="kv"><dt>Do</dt><dd>${esc(x.action)}</dd></dl>` : ""}
-      <div class="cfoot"><div class="who">${x.leaders.map(l => `<span>${esc(l)}</span>`).join("")}</div>
-        <span>${outletLine(x)} · ${fmt(x.date, true)} · confidence ${x.confidence}/10</span></div>
+      ${(x.tags || []).length ? `<div class="meta">${x.tags.map(t => `<span class="htag">${esc(t)}</span>`).join(" ")}</div>` : ""}
+      <div class="cfoot"><div class="who">${x.leaders.map(l => `<span title="${esc(DATA.functions[l] ? DATA.functions[l].name : l)}">${esc(FN_SHORT[l] || l)}</span>`).join("")}</div>
+        <span>${outletLine(x)} · ${x.published ? fmt(x.date, true) : "seen " + fmt(x.date, true)} · confidence ${x.confidence}/10</span></div>
     </div></article>`).join("");
 }
 
@@ -670,7 +663,34 @@ function renderMarkets(){
   setTable("eq", ["Company", "Last close", "1 month", "3 months", "Date"], sorted.map(e => [e.name, num(e.latest), e.change_1m_pct + "%", (e.change_3m_pct ?? "–") + "%", e.date]));
 }
 
-function renderAll(){ renderCompbar(); renderLeaders(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
+/* ---------- trending hashtags: count in the period vs the same-length period before it */
+function trending(){
+  const p = pool(), n = spanDays(state.from, state.to);
+  const pFrom = addDays(state.from, -n), pTo = addDays(state.from, -1);
+  const prev = ALL.filter(x => x.date >= pFrom && x.date <= pTo && matchCo(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
+  const now = {}, before = {};
+  p.forEach(x => (x.tags || []).forEach(t => now[t] = (now[t] || 0) + 1));
+  prev.forEach(x => (x.tags || []).forEach(t => before[t] = (before[t] || 0) + 1));
+  return Object.keys(now).map(t => ({tag:t, n:now[t], prev:before[t] || 0, rise:now[t] - (before[t] || 0)}))
+    .sort((a, b) => b.rise - a.rise || b.n - a.n || a.tag.localeCompare(b.tag));
+}
+function renderTop10(){
+  const all = trending(), pinned = (DATA.pinned_hashtags || []).map(t => all.find(x => x.tag === t) || {tag:t, n:0, prev:0, rise:0});
+  const tr = [...all.filter(t => !pinned.some(p => p.tag === t.tag)).slice(0, 8 - pinned.length), ...pinned];
+  if (state.tag && state.tag !== "All" && !tr.some(t => t.tag === state.tag)) state.tag = null;
+  if (!state.tag) state.tag = tr.length ? tr[0].tag : "All";
+  document.getElementById("tagChips").innerHTML = [`<button class="tag" aria-pressed="${state.tag === "All"}" data-tag="All">All news</button>`,
+    ...tr.map(t => `<button class="tag" aria-pressed="${state.tag === t.tag}" data-tag="${esc(t.tag)}">${esc(t.tag)}<small>${t.n}</small>${t.rise > 0 && t.prev ? `<span class="up">▲${t.rise}</span>` : ""}</button>`)].join("");
+  document.querySelectorAll("#tagChips .tag").forEach(b => b.onclick = () => { state.tag = b.dataset.tag; renderTop10(); });
+  const list = pool().filter(x => state.tag === "All" || (x.tags || []).includes(state.tag))
+    .sort((a, b) => b.impact - a.impact || (b.outlets || 1) - (a.outlets || 1) || (b.date > a.date ? 1 : -1)).slice(0, 10);
+  document.getElementById("top10").innerHTML = list.length ? list.map(x => `<li><span class="imp" style="background:var(--heat-${band(x.impact)})" title="Impact ${x.impact} of 10">${x.impact}</span>
+      <div><a href="${esc((x.sources && x.sources[0] && x.sources[0].link) || x.link)}" target="_blank" rel="noopener">${esc(x.what_happened)}</a>
+      <span class="src">${esc(x.source)}${x.outlets > 1 ? ` +${x.outlets - 1}` : ""} · ${x.published ? fmt(x.date) : "seen " + fmt(x.date)} · ${(x.tags || []).slice(0, 3).map(t => `<span class="htag">${esc(t)}</span>`).join(" ")}</span></div></li>`).join("")
+    : `<li style="display:block">No news for this hashtag in the period.</li>`;
+}
+
+function renderAll(){ renderCompbar(); renderLeaders(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
 
 if (window.Chart) {
   Chart.defaults.color = C.muted; Chart.defaults.borderColor = C.line; Chart.defaults.font.family = MONO; Chart.defaults.font.size = 11;
@@ -687,7 +707,7 @@ renderMarkets();
   if (!window.THREE || !canvas) return;
   let renderer;
   try { renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true}); } catch (e) { return; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.outputEncoding = THREE.sRGBEncoding;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);

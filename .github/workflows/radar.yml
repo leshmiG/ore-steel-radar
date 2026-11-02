@@ -40,5 +40,6 @@ jobs:
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
           git add -f data/radar.db docs
+          git add -f data/markets.json 2>/dev/null || true
           git diff --cached --quiet || git commit -m "Radar update $(date -u +%F)"
           git push

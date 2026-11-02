@@ -42,7 +42,7 @@ def test_fallback_analysis_and_report(tmp_path, monkeypatch):
     page = html_path.read_text(encoding="utf-8")
     assert page.startswith("<!doctype html>") and "Port strike" in page and "__DATA__" not in page
     brief = md_path.read_text(encoding="utf-8")
-    assert "## CFO" in brief and "## CTO" in brief
+    assert "## Finance & Risk" in brief and "## Innovation & Research" in brief
     data_dir = Path(cfg["settings"]["output_dir"]) / "data"
     days = json.loads((data_dir / "days.json").read_text(encoding="utf-8"))
     assert days and all((data_dir / f"{d['date']}.json").exists() for d in days)
@@ -71,7 +71,8 @@ def test_triage_then_analysis(tmp_path, monkeypatch):
             calls["analyse"] += 1
             assert "Use ONLY the headline" in kw["system"]
             out = [{"id": p["id"], "relevant": True, "watch_area": "Suppliers and logistics", "event_type": "Test",
-                    "companies": [], "countries": ["Brazil"], "region": "Mars", "leaders": ["CFO", "CPO", "BOSS"],
+                    "companies": [], "countries": ["Brazil"], "region": "Mars", "functions": ["FIN", "SCM", "BOSS"],
+                    "hashtags": ["IronOre", "#Strait of Hormuz", "#IronOre"],
                     "signal": "tailwind", "impact": 15, "confidence": "7", "what_happened": "x", "so_what": "y",
                     "action": "z"} for p in payload]
             return types.SimpleNamespace(content=[types.SimpleNamespace(text="Result:\n" + json.dumps(out))])
@@ -83,7 +84,8 @@ def test_triage_then_analysis(tmp_path, monkeypatch):
     rows = db.execute("SELECT * FROM insights WHERE relevant = 1").fetchall()
     assert len(rows) == 2
     r = rows[0]
-    assert json.loads(r["leaders"]) == ["CFO", "CPO"] and r["impact"] == 10 and r["confidence"] == 7
+    assert json.loads(r["leaders"]) == ["FIN", "SCM"] and r["impact"] == 10 and r["confidence"] == 7
+    assert json.loads(r["tags"]) == ["#IronOre", "#StraitofHormuz"]
     assert r["region"] == "Global" and r["signal"] == "tailwind"
     assert db.execute("SELECT COUNT(*) FROM items WHERE analysed = 0").fetchone()[0] == 0
 
@@ -93,7 +95,7 @@ def test_demo_builds(tmp_path):
     html_path, md_path = radar.demo(cfg)
     page = html_path.read_text(encoding="utf-8")
     assert "LKAB" in page and '"2026-10-30"' in page and "competitor_groups" in page
-    assert "## CFO" in md_path.read_text(encoding="utf-8")
+    assert "## Supply Chain" in md_path.read_text(encoding="utf-8")
 
 
 def test_source_tiers_and_verification(tmp_path):
@@ -148,3 +150,19 @@ def test_markets_parse_and_keep_last_good(tmp_path, monkeypatch):
     monkeypatch.setattr(radar, "fetch_csv", boom)
     again = radar.fetch_markets(cfg)                    # sources down: keep the last good values
     assert again["commodities"][0]["latest"] == 129 and again["equities"][0]["name"] == "Vale"
+
+
+def test_backfill_windows_and_dedupe(tmp_path):
+    cfg = make_cfg(tmp_path)
+    src = radar.build_sources(cfg, ("2026-07-01", "2026-07-15"))
+    assert all("after%3A2026-07-01" in u and "when%3A" not in u for _, u in src)
+    assert not any(label == "feed" for label, _ in src)            # RSS feeds have no date window
+    assert any("Hormuz" in label for label, _ in src)
+    d = radar.Deduper([("a", "Vale cuts iron ore output guidance for 2026 - Reuters")])
+    assert d.match("x", radar.norm_title("Vale cuts iron ore output guidance for 2026 - Mining.com")) == "a"
+    assert d.match("y", radar.norm_title("China steel output rises in September")) is None
+
+
+def test_legacy_functions_map_to_new_tabs(tmp_path):
+    cfg = make_cfg(tmp_path)
+    assert radar.norm_functions(["CEO", "CFO", "SMO", "CPO", "CTO", "XYZ"], cfg) == ["GOV", "FIN", "SCM", "INN"]

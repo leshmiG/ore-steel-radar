@@ -3,7 +3,9 @@
 Fully automatic global intelligence for iron ore, pellets, DRI and steel. Every morning it reads the news on
 28 industry topics, 80+ companies and 36 industry websites (Fastmarkets, Argus, S&P Global, Mysteel, SMM, Kallanish,
 Reuters, GCC and Indian business press and more), pulls free market data, keeps what matters, has Claude score each item, and publishes an
-animated dashboard and a brief for the **CEO, CFO, CTO (operations), SMO and CPO**. No company details needed.
+animated dashboard and a brief for four functions: **Governance & Strategy, Finance & Risk, Supply Chain, and
+Innovation & Research**. No company details needed. It also watches the **Strait of Hormuz** and tags every signal
+with hashtags so you can see what is trending.
 
 ```
 Google News searches, 36 industry websites and RSS feeds (~85 sources) + FRED/Stooq market data
@@ -29,17 +31,18 @@ Paywalled sites (Fastmarkets, Argus, S&P Global, Kallanish) are read through the
 ## What the dashboard shows
 
 - **Date filters** in the top bar: Day, 7 days, 30 days, All, or a custom range, with arrows to step back through
-  previous days or weeks. Older days load on demand from `docs/data/`, so the page stays fast.
-- **Market pulse:** iron ore, Australian coal, European gas, US steel PPI and Brent prices with sparklines, plus
-  one- and three-month share price moves of Vale, Rio Tinto, BHP, ArcelorMittal, Nucor, POSCO and others.
-- **Verification badges and outlet lists** on every signal, and a "Verified only" filter.
-- **Headline ticker** of the top 10 signals, and a **3D hero** of grey iron ore pellets and steel billets orbiting a steel core
-- **Leader switch** (Everyone, CEO, CFO, CTO, SMO, CPO) that filters every number, chart and signal
-- **Top 3 calls** for the selected leader, each with so what and a suggested action
-- **Charts:** pressure by watch area (radar), signal matrix (impact vs confidence, act-now zone),
-  tailwinds vs headwinds, companies in the news, regions, and daily signal flow (click a day to drill in).
-  Every chart has a table view.
-- **All signals** with filters by watch area, region, tailwind/headwind and search; every item links to its source
+  previous days or weeks. History is kept for 180 days; older days load on demand from `docs/data/`.
+- **Top 10 · trending** beside the headline: the top 10 news for the selected hashtag. Hashtags are ranked by how much
+  they grew against the previous period; `#StraitOfHormuz` is always shown (`pinned_hashtags` in `config.yaml`).
+  Hashtags come from the news itself, not from social media.
+- **Market pulse:** iron ore, Australian coal, European gas, US steel PPI and Brent prices with sparklines, plus share
+  price moves of Vale, Rio Tinto, BHP, ArcelorMittal, Nucor, POSCO and others.
+- **Function tabs** (Governance & Strategy, Finance & Risk, Supply Chain, Innovation & Research) that filter every
+  number, chart and signal, and a **competitor picker** to focus on chosen companies.
+- **Top 3 calls**, then charts: trending hashtags, pressure by watch area, companies in the news and regions. Every
+  chart has a table view.
+- **All signals** shows impact 7 and above by default; filters for impact, hashtag, watch area, region, verification,
+  tailwind/headwind and search. Every signal carries a verification badge and links to all outlets that reported it.
 
 ## Repository layout
 
@@ -84,6 +87,14 @@ Without an API key the pipeline still runs with a keyword fallback (no so-what),
 > **Privacy:** a GitHub Pages site is public, even from a private repository (unless your company has GitHub
 > Enterprise with private Pages), and Pages on private repos needs a paid plan. For internal use, keep the repo
 > private and host with Option 3 behind your company login.
+
+## Load four months of history (one-off)
+
+The daily job only looks back two days. To fill the dashboard with history, run **Actions > Backfill history > Run
+workflow** once (defaults: 120 days, up to 4,000 headlines analysed). It searches every topic, company and website in
+two-week windows, analyses what it finds and commits the result; expect it to take 30 to 90 minutes. This is a
+one-time Claude API cost that scales with `max_items`; check usage in the Anthropic console. Locally:
+`python radar.py backfill --days 120 --max 4000`.
 
 ## Option 3: Docker (company server, AWS, Azure)
 

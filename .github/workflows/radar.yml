@@ -1,0 +1,44 @@
+name: Daily radar
+
+on:
+  schedule:
+    - cron: "30 3 * * *"   # 03:30 UTC = 06:30 Bahrain / Riyadh
+  workflow_dispatch:        # "Run workflow" button for a manual run
+
+permissions:
+  contents: write           # lets the job commit the database and dashboard
+
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt pytest
+
+      - name: Test
+        run: pytest -q
+
+      - name: Run radar
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RADAR_COMPANY_PROFILE: ${{ secrets.RADAR_COMPANY_PROFILE }}
+        run: python radar.py run
+
+      - name: Save results
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add -f data/radar.db docs
+          git diff --cached --quiet || git commit -m "Radar update $(date -u +%F)"
+          git push

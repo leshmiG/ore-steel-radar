@@ -161,6 +161,138 @@ competitors:
     - Metso
     - Boston Metal
 
+# Industry websites searched directly every run (Google News "site:" search, headlines only;
+# paywalled articles stay behind their paywall, the radar only reads public headlines and snippets)
+site_watch:
+  # price reporting agencies and trade press
+  - fastmarkets.com
+  - argusmedia.com
+  - spglobal.com
+  - mysteel.net
+  - metal.com
+  - kallanish.com
+  - steelorbis.com
+  - gmk.center
+  - eurometal.net
+  - bigmint.co
+  - steeltimesint.com
+  - yieh.com
+  - mesteel.com
+  # mining and shipping
+  - mining.com
+  - mining-technology.com
+  - miningweekly.com
+  - mining-journal.com
+  - australianmining.com.au
+  - hellenicshippingnews.com
+  - splash247.com
+  # global business news
+  - reuters.com
+  - bloomberg.com
+  - ft.com
+  - cnbc.com
+  # GCC, Middle East and India
+  - argaam.com
+  - zawya.com
+  - tradearabia.com
+  - thenationalnews.com
+  - arabnews.com
+  - gulfnews.com
+  - economictimes.indiatimes.com
+  - business-standard.com
+  # data and research
+  - worldsteel.org
+  - midrex.com
+  - ieefa.org
+  - iea.org
+
+# Source credibility, used to verify each signal. Anything not listed is tier 3.
+source_tiers:
+  official:   # company, exchange, government and industry-body sources
+    - worldsteel.org
+    - midrex.com
+    - vale.com
+    - riotinto.com
+    - bhp.com
+    - fortescue.com
+    - lkab.com
+    - arcelormittal.com
+    - nucor.com
+    - posco.com
+    - nipponsteel.com
+    - tatasteel.com
+    - jsw.in
+    - emsteel.com
+    - sabic.com
+    - stegra.com
+    - sec.gov
+    - asx.com.au
+    - europa.eu
+    - iea.org
+  tier1:      # price reporters and major wires
+    - reuters.com
+    - bloomberg.com
+    - fastmarkets.com
+    - argusmedia.com
+    - spglobal.com
+    - ft.com
+    - wsj.com
+    - kallanish.com
+    - mysteel.net
+    - metal.com
+  tier2:      # established trade and regional press
+    - steelorbis.com
+    - gmk.center
+    - eurometal.net
+    - bigmint.co
+    - mining.com
+    - mining-technology.com
+    - miningweekly.com
+    - mining-journal.com
+    - australianmining.com.au
+    - steeltimesint.com
+    - yieh.com
+    - mesteel.com
+    - hellenicshippingnews.com
+    - splash247.com
+    - argaam.com
+    - zawya.com
+    - tradearabia.com
+    - thenationalnews.com
+    - arabnews.com
+    - gulfnews.com
+    - economictimes.indiatimes.com
+    - business-standard.com
+    - cnbc.com
+    - nature.com
+    - ieefa.org
+    - omanobserver.om
+    - timesofoman.com
+    - khaleejtimes.com
+    - gulf-times.com
+    - saudigazette.com.sa
+    - newsofbahrain.com
+
+# Market data (free, no API key). Fetched each run; the dashboard hides the panel if a source is unavailable.
+markets:
+  commodities:      # FRED CSV series (IMF and BLS data)
+    - {id: PIORECRUSDM, name: Iron ore, unit: "$/t", note: "Global price, monthly (IMF)"}
+    - {id: PCOALAUUSDM, name: Coal (Australia), unit: "$/t", note: "Monthly (IMF)"}
+    - {id: PNGASEUUSDM, name: Natural gas (Europe), unit: "$/MMBtu", note: "Monthly (IMF)"}
+    - {id: WPU101, name: US iron & steel PPI, unit: "index", note: "Producer price index, monthly (BLS)"}
+    - {id: DCOILBRENTEU, name: Brent crude, unit: "$/bbl", note: "Daily (EIA)"}
+  equities:         # Stooq daily closes, US listings
+    - {symbol: vale.us, name: Vale}
+    - {symbol: rio.us, name: Rio Tinto}
+    - {symbol: bhp.us, name: BHP}
+    - {symbol: mt.us, name: ArcelorMittal}
+    - {symbol: nue.us, name: Nucor}
+    - {symbol: stld.us, name: Steel Dynamics}
+    - {symbol: clf.us, name: Cleveland-Cliffs}
+    - {symbol: pkx.us, name: POSCO}
+    - {symbol: tx.us, name: Ternium}
+    - {symbol: ggb.us, name: Gerdau}
+
 # Extra RSS feeds (check each site's terms before automating)
 feeds:
   - https://www.mining.com/feed/

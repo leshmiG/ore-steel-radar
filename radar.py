@@ -6,7 +6,7 @@ Pipeline:  collect (RSS) -> dedupe -> triage (cheap model) -> analyse (Claude) -
 
 Usage:
     python radar.py run                  # collect + analyse + report (the daily job)
-    python radar.py collect | analyse | report [--days 7]
+    python radar.py collect | analyse | markets | report [--days 7]
     python radar.py serve [--daily 06:30] # host docs/ and refresh daily (Docker / server)
     python radar.py demo                 # dashboard from demo/demo_items.json
 """
@@ -106,8 +106,13 @@ def connect(db_path):
     CREATE TABLE IF NOT EXISTS insights(
         item_id TEXT PRIMARY KEY, relevant INTEGER, watch_area TEXT, event_type TEXT, companies TEXT,
         countries TEXT, region TEXT, leaders TEXT, signal TEXT, impact INTEGER, confidence INTEGER,
-        what_happened TEXT, so_what TEXT, action TEXT, analysed_by TEXT, analysed_at TEXT);
+        what_happened TEXT, so_what TEXT, action TEXT, analysed_by TEXT, analysed_at TEXT, checks TEXT);
+    CREATE TABLE IF NOT EXISTS item_sources(
+        item_id TEXT, name TEXT, domain TEXT, link TEXT, seen_at TEXT, PRIMARY KEY(item_id, domain));
     """)
+    cols = {r[1] for r in db.execute("PRAGMA table_info(insights)")}
+    if "checks" not in cols:  # upgrade databases created by older versions
+        db.execute("ALTER TABLE insights ADD COLUMN checks TEXT")
     return db
 
 
@@ -135,8 +140,49 @@ def build_sources(cfg):
             ors = " OR ".join(f'"{n}"' for n in names[i:i + 4])
             q = f"({ors}) (iron ore OR pellets OR steel) when:{lookback}"
             out.append((f"companies:{group}", GOOGLE_NEWS.format(q=urllib.parse.quote(q))))
+    for d in cfg.get("site_watch", []):
+        q = f"site:{d} (iron ore OR pellets OR steel OR DRI OR HBI) when:{lookback}"
+        out.append((f"site:{d}", GOOGLE_NEWS.format(q=urllib.parse.quote(q))))
     out += [("feed", f) for f in cfg.get("feeds", [])]
     return out
+
+
+def domain_of(url):
+    host = urllib.parse.urlparse(url or "").netloc.lower()
+    return host[4:] if host.startswith("www.") else host
+
+
+def tier_of(domain, cfg):
+    """official / tier1 / tier2 / tier3 credibility of a source domain."""
+    if not domain:
+        return "tier3"
+    if re.search(r"\.gov(\.[a-z]{2})?$", domain):
+        return "official"
+    for tier in ("official", "tier1", "tier2"):
+        for d in cfg.get("source_tiers", {}).get(tier, []):
+            if domain == d or domain.endswith("." + d):
+                return tier
+    return "tier3"
+
+
+def verification(sources):
+    """verified: an official source, or 2+ independent outlets incl. a tier 1/2 one, or 3+ outlets.
+    single: one credible (tier 1/2) outlet. unconfirmed: only lesser-known outlets."""
+    tiers = [x["tier"] for x in sources]
+    outlets = len({x["domain"] or x["name"] for x in sources})
+    credible = any(t in ("tier1", "tier2") for t in tiers)
+    if "official" in tiers or (outlets >= 2 and credible) or outlets >= 3:
+        return "verified"
+    return "single" if credible else "unconfirmed"
+
+
+NUM = re.compile(r"\d+(?:[.,]\d+)*")
+
+
+def figure_check(text, source_text):
+    """Return the figures in `text` that do not appear in the source headline/summary."""
+    src = source_text.replace(",", "")
+    return [n for n in NUM.findall(text or "") if n.replace(",", "") not in src]
 
 
 def prefilter(text, cfg):
@@ -169,15 +215,23 @@ def collect(cfg, db, sources=None):
                 continue
             key = norm_title(title)
             item_id = hashlib.sha1(key.encode()).hexdigest()[:16]
+            srcd = e.get("source") if isinstance(e.get("source"), dict) else {}
+            src_name = clean(srcd.get("title", "")) or feed_title
+            src_domain = domain_of(srcd.get("href")) or domain_of(e.get("link"))
+            if "news.google." in src_domain:
+                src_domain = ""
             match = next((rid for rid, t in recent if rid == item_id or SequenceMatcher(None, t, key).ratio() >= 0.88), None)
-            if match:
-                db.execute("UPDATE items SET coverage = coverage + 1 WHERE id = ?", (match,))
+            if match:  # same story from another outlet: record the outlet, count distinct outlets
+                db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)",
+                           (match, src_name, src_domain or src_name.lower(), e.get("link", ""), now_iso()))
+                db.execute("UPDATE items SET coverage = (SELECT COUNT(*) FROM item_sources WHERE item_id = ?) WHERE id = ?", (match, match))
                 dup += 1
                 continue
-            src = e.get("source", {}).get("title") if isinstance(e.get("source"), dict) else None
             db.execute("INSERT INTO items(id,title,link,source,published,summary,query,first_seen) VALUES(?,?,?,?,?,?,?,?)",
-                       (item_id, title, e.get("link", ""), src or feed_title,
+                       (item_id, title, e.get("link", ""), src_name,
                         e.get("published", "") or e.get("updated", ""), summary, label, now_iso()))
+            db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)",
+                       (item_id, src_name, src_domain or src_name.lower(), e.get("link", ""), now_iso()))
             recent.append((item_id, key))
             added += 1
     db.commit()
@@ -276,15 +330,19 @@ def fallback_analysis(row, cfg):
             "so_what": "AI analysis is off. Add ANTHROPIC_API_KEY to get the impact and so-what.", "action": ""}
 
 
-def save_insight(db, item_id, a, by, cfg):
+def save_insight(db, item_id, a, by, cfg, source_text=""):
     region = a.get("region") if a.get("region") in cfg["regions"] else "Global"
     signal = a.get("signal") if a.get("signal") in SIGNALS else "neutral"
-    db.execute("INSERT OR REPLACE INTO insights VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+    checks = []
+    missing = figure_check(a.get("what_happened", ""), source_text) if source_text else []
+    if missing:  # the AI wrote a figure the source does not contain
+        checks.append(f"Figures not in source: {', '.join(missing[:4])}")
+    db.execute("INSERT OR REPLACE INTO insights VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
         item_id, int(bool(a.get("relevant"))), a.get("watch_area", ""), a.get("event_type", ""),
         json.dumps(a.get("companies", [])), json.dumps(a.get("countries", [])), region,
         json.dumps([l for l in a.get("leaders", []) if l in LEADERS]), signal,
         clamp(a.get("impact")), clamp(a.get("confidence")), a.get("what_happened", ""),
-        a.get("so_what", ""), a.get("action", ""), by, now_iso()))
+        a.get("so_what", ""), a.get("action", ""), by, now_iso(), json.dumps(checks)))
     db.execute("UPDATE items SET analysed = 1 WHERE id = ?", (item_id,))
 
 
@@ -341,11 +399,81 @@ def analyse(cfg, db):
             continue
         for r in batch:
             if r["id"] in results:
-                save_insight(db, r["id"], results[r["id"]], model, cfg)
+                save_insight(db, r["id"], results[r["id"]], model, cfg, f"{r['title']} {r['summary']}")
                 done += 1
         db.commit()
     print(f"analyse: {done} of {len(kept)} headlines analysed with {model}")
     return done
+
+
+# ---------------------------------------------------------------- market data
+FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
+STOOQ_CSV = "https://stooq.com/q/d/l/?s={symbol}&i=d"
+
+
+def fetch_csv(url, timeout=25):
+    import csv
+    import io
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (ore-steel-radar)"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        text = resp.read().decode("utf-8", "replace")
+    rows = list(csv.reader(io.StringIO(text)))
+    if len(rows) < 3 or not re.match(r"\d{4}-\d{2}-\d{2}", rows[1][0] if rows[1] else ""):
+        raise ValueError("not a dated CSV")
+    return rows
+
+
+def pct(a, b):
+    return round((a / b - 1) * 100, 1) if a is not None and b else None
+
+
+def fetch_markets(cfg):
+    """Commodity series (FRED) and competitor share prices (Stooq). Any source that fails is skipped;
+    the last good copy in data/markets.json is kept for it."""
+    path = ROOT / "data" / "markets.json"
+    old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    old_c = {x["id"]: x for x in old.get("commodities", [])}
+    old_e = {x["symbol"]: x for x in old.get("equities", [])}
+    out = {"fetched": now_iso(), "commodities": [], "equities": []}
+    m = cfg.get("markets", {})
+    for c in m.get("commodities", []):
+        try:
+            rows = fetch_csv(FRED_CSV.format(id=c["id"]))
+            pts = [[r[0], float(r[1])] for r in rows[1:] if len(r) > 1 and r[1] not in ("", ".")]
+            daily = len(pts) > 1 and (dt.date.fromisoformat(pts[-1][0]) - dt.date.fromisoformat(pts[-2][0])).days < 7
+            pts = pts[-260:] if daily else pts[-36:]
+            back = 252 if daily else 12
+            out["commodities"].append({**c, "freq": "daily" if daily else "monthly", "points": pts, "latest": pts[-1][1],
+                                       "date": pts[-1][0], "change_pct": pct(pts[-1][1], pts[-2][1]),
+                                       "yoy_pct": pct(pts[-1][1], pts[-1 - back][1]) if len(pts) > back else None})
+        except Exception as exc:
+            print(f"markets: {c['id']} unavailable ({exc})")
+            if c["id"] in old_c:
+                out["commodities"].append(old_c[c["id"]])
+    for e in m.get("equities", []):
+        try:
+            rows = fetch_csv(STOOQ_CSV.format(symbol=e["symbol"]))
+            head = [h.lower() for h in rows[0]]
+            ci = head.index("close")
+            pts = [[r[0], float(r[ci])] for r in rows[1:] if len(r) > ci and r[ci]][-130:]
+            last = pts[-1][1]
+            out["equities"].append({**e, "points": pts, "latest": last, "date": pts[-1][0],
+                                    "change_1m_pct": pct(last, pts[-22][1]) if len(pts) > 22 else None,
+                                    "change_3m_pct": pct(last, pts[-64][1]) if len(pts) > 64 else None})
+        except Exception as exc:
+            print(f"markets: {e['symbol']} unavailable ({exc})")
+            if e["symbol"] in old_e:
+                out["equities"].append(old_e[e["symbol"]])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(out), encoding="utf-8")
+    print(f"markets: {len(out['commodities'])} commodity series, {len(out['equities'])} share prices")
+    return out
+
+
+def load_markets():
+    path = ROOT / "data" / "markets.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
 # ---------------------------------------------------------------- report
@@ -361,7 +489,7 @@ def item_date(published, first_seen):
     return first_seen[:10]
 
 
-def load_items(db, history_days):
+def load_items(db, history_days, cfg):
     """All relevant signals first seen in the last `history_days`, plus headlines scanned per day."""
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=history_days)).isoformat()
     scanned = {r[0]: r[1] for r in db.execute(
@@ -369,18 +497,37 @@ def load_items(db, history_days):
     rows = db.execute("""SELECT i.*, n.* FROM items i JOIN insights n ON n.item_id = i.id
                          WHERE i.first_seen >= ? AND n.relevant = 1 ORDER BY n.impact DESC, i.first_seen DESC""",
                       (since,)).fetchall()
-    items = [{
+    srcs = {}
+    for s_ in db.execute("SELECT * FROM item_sources WHERE seen_at >= ? ORDER BY seen_at", (since,)):
+        srcs.setdefault(s_["item_id"], []).append(s_)
+    return scanned, [finalise(r, srcs.get(r["id"], []), cfg) for r in rows]
+
+
+def finalise(r, source_rows, cfg):
+    """Attach outlets, verification status and checked confidence to one signal."""
+    sources = [{"name": s_["name"], "domain": s_["domain"], "link": s_["link"], "tier": tier_of(s_["domain"], cfg)}
+               for s_ in source_rows] or [{"name": r["source"], "domain": domain_of(r["link"]), "link": r["link"],
+                                           "tier": tier_of(domain_of(r["link"]), cfg)}]
+    rank = {"official": 0, "tier1": 1, "tier2": 2, "tier3": 3}
+    sources.sort(key=lambda x: rank[x["tier"]])
+    status = verification(sources)
+    checks = json.loads(r["checks"] or "[]") if "checks" in r.keys() else []
+    conf = r["confidence"]
+    conf = min(conf, 5) if status == "unconfirmed" else min(conf, 7) if status == "single" else conf
+    if checks:
+        conf = max(1, conf - 2)
+    return {
         "title": r["title"], "link": r["link"], "source": r["source"], "published": (r["published"] or "")[:16],
         "date": item_date(r["published"], r["first_seen"]), "first_seen": r["first_seen"][:10],
         "coverage": r["coverage"], "watch_area": r["watch_area"], "event_type": r["event_type"],
         "companies": json.loads(r["companies"] or "[]"), "countries": json.loads(r["countries"] or "[]"),
         "region": r["region"] or "Global", "leaders": json.loads(r["leaders"] or "[]"), "signal": r["signal"] or "neutral",
         "impact": r["impact"], "confidence": r["confidence"], "what_happened": r["what_happened"],
-        "so_what": r["so_what"], "action": r["action"]} for r in rows]
-    return scanned, items
+        "so_what": r["so_what"], "action": r["action"], "sources": sources[:8], "outlets": len(sources),
+        "verification": status, "checks": checks, "confidence": conf}
 
 
-def write_reports(cfg, scanned_by_day, items, days, note=""):
+def write_reports(cfg, scanned_by_day, items, days, note="", markets=None):
     """docs/index.html embeds the last `days` days; every day also gets docs/data/<date>.json for the date filter."""
     s = cfg["settings"]
     out = ROOT / s.get("output_dir", "docs")
@@ -408,7 +555,7 @@ def write_reports(cfg, scanned_by_day, items, days, note=""):
     data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
             "default_days": days, "day_list": day_list, "inline_days": inline_days,
             "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "leaders": cfg["leaders"], "areas": cfg["watch_areas"],
-            "regions": cfg["regions"], "items": inline, "note": note}
+            "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets()}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     html_path = out / "index.html"
@@ -438,7 +585,7 @@ def write_reports(cfg, scanned_by_day, items, days, note=""):
 
 
 def report(cfg, db, days=7):
-    scanned, items = load_items(db, cfg["settings"].get("history_days", 90))
+    scanned, items = load_items(db, cfg["settings"].get("history_days", 90), cfg)
     return write_reports(cfg, scanned, items, days)
 
 
@@ -447,7 +594,16 @@ def demo(cfg):
     items = sorted(data["items"], key=lambda x: -x["impact"])
     for x in items:
         x["date"] = item_date(x.get("published", ""), x["first_seen"])
-    return write_reports(cfg, {items[0]["first_seen"]: data["scanned"]}, items, data.get("days", 7), data.get("note", ""))
+        srcs = x.get("sources") or [{"name": x["source"], "link": x["link"]}]
+        x["sources"] = sorted([{**s_, "domain": domain_of(s_["link"]), "tier": tier_of(domain_of(s_["link"]), cfg)} for s_ in srcs],
+                              key=lambda s_: ["official", "tier1", "tier2", "tier3"].index(s_["tier"]))
+        x["outlets"] = len(x["sources"])
+        x["coverage"] = x["outlets"]
+        x["verification"] = verification(x["sources"])
+        x.setdefault("checks", [])
+        x["confidence"] = min(x["confidence"], 5) if x["verification"] == "unconfirmed" else min(x["confidence"], 7) if x["verification"] == "single" else x["confidence"]
+    return write_reports(cfg, {items[0]["first_seen"]: data["scanned"]}, items, data.get("days", 7), data.get("note", ""),
+                         data.get("markets", {}))
 
 
 # ---------------------------------------------------------------- hosting
@@ -456,6 +612,10 @@ def run_pipeline(cfg, days):
     try:
         collect(cfg, db)
         analyse(cfg, db)
+        try:
+            fetch_markets(cfg)
+        except Exception as exc:
+            print(f"markets: skipped ({exc})")
         report(cfg, db, days)
     finally:
         db.close()
@@ -494,7 +654,7 @@ def serve(cfg, port, daily, days):
 # ---------------------------------------------------------------- CLI
 def main():
     ap = argparse.ArgumentParser(description="Ore & Steel Radar")
-    ap.add_argument("command", choices=["run", "collect", "analyse", "report", "demo", "serve"])
+    ap.add_argument("command", choices=["run", "collect", "analyse", "markets", "report", "demo", "serve"])
     ap.add_argument("--config", default=str(ROOT / "config.yaml"))
     ap.add_argument("--days", type=int, default=None, help="dashboard window in days (default: settings.report_days)")
     ap.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")))
@@ -517,6 +677,11 @@ def main():
         collect(cfg, db, sources)
     if args.command in ("run", "analyse"):
         analyse(cfg, db)
+    if args.command in ("run", "markets"):
+        try:
+            fetch_markets(cfg)
+        except Exception as exc:  # market data is a bonus; never fail the run for it
+            print(f"markets: skipped ({exc})")
     if args.command in ("run", "report"):
         report(cfg, db, days)
 

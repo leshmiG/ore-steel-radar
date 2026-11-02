@@ -151,6 +151,27 @@ h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%
 footer{border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;background:var(--surface)}
 footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 
+/* market pulse */
+.mkts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:18px}
+.mk{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 10px;box-shadow:var(--shadow);display:grid;gap:4px}
+.mk .nm{font:600 13px var(--body);color:var(--steel)}
+.mk .vl{font:800 30px/1 var(--display);font-variant-numeric:tabular-nums;color:var(--ink)}
+.mk .vl small{font:500 12px var(--mono);color:var(--muted);margin-left:4px}
+.mk .ch{font:600 12px var(--mono)}
+.mk .ch.up{color:var(--tail)} .mk .ch.down{color:var(--head)} .mk .ch.flat{color:var(--muted)}
+.mk .ft{font:11px var(--mono);color:var(--faint)}
+.mk svg{display:block;width:100%;height:44px}
+/* verification */
+.ver{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--mono);padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ver.verified{color:#1f5f3a;background:#e3f3ea}
+.ver.single{color:#4b5866;background:#eef1f4}
+.ver.unconfirmed{color:#8a4b0f;background:#fbefdf}
+.warn{font:600 11.5px var(--mono);color:#8a4b0f;background:#fbefdf;padding:2px 9px;border-radius:999px}
+.outlets{font-size:12.5px;color:var(--muted)}
+.outlets a{color:var(--steel);text-decoration:none;border-bottom:1px solid var(--line-2)}
+.outlets a:hover{color:var(--tail);border-color:var(--tail)}
+.outlets .t{font:600 10px var(--mono);color:var(--faint);margin-left:3px;text-transform:uppercase}
+
 /* competitor picker */
 .compbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px}
 .compbar .lbl{font:800 15px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel-mid)}
@@ -223,6 +244,12 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 </section>
 
 <main>
+  <section class="section gutter" id="marketSec" hidden><div class="inner">
+    <h2>Market pulse</h2>
+    <p class="sub" id="mkSub"></p>
+    <div class="mkts" id="mkts"></div>
+    <article class="panel" style="margin-top:14px" id="p-eq"><header><div><h3>Miners and steelmakers on the stock market</h3><p class="insight" id="i-eq"></p></div><button class="tbtn" data-t="eq">Table</button></header><div class="canvas-box" style="height:300px"><canvas id="c-eq" role="img" aria-label="One-month share price change of listed miners and steelmakers"></canvas></div><div class="tablewrap" hidden id="t-eq"></div></article>
+  </div></section>
   <section class="section gutter"><div class="inner">
     <h2>Your briefing</h2>
     <p class="sub">Pick a leader to filter every call, chart and signal on this page.</p>
@@ -262,6 +289,9 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
     <div class="filters">
       <select id="fArea" aria-label="Watch area"></select>
       <select id="fRegion" aria-label="Region"></select>
+      <select id="fVer" aria-label="Verification">
+        <option value="All">All signals</option><option value="verified">Verified only</option><option value="credible">Hide unconfirmed</option>
+      </select>
       <select id="fSignal" aria-label="Tailwind or headwind">
         <option value="All">Tailwinds and headwinds</option><option value="tailwind">Tailwinds only</option><option value="headwind">Headwinds only</option><option value="neutral">Neutral only</option>
       </select>
@@ -305,7 +335,7 @@ const FIRST = DAYS[0] || DATA.latest, LAST = DATA.latest;
 const SCANNED = Object.fromEntries(DATA.day_list.map(d => [d.date, d.scanned]));
 const LOADED = new Set(DATA.inline_days);
 let ALL = DATA.items.slice();
-const state = {leader:"All", area:"All", region:"All", signal:"All", q:"", preset:String(DATA.default_days || 7),
+const state = {leader:"All", area:"All", region:"All", signal:"All", ver:"All", q:"", preset:String(DATA.default_days || 7),
   from:addDays(LAST, -((DATA.default_days || 7) - 1)), to:LAST};
 const inRange = x => x.date >= state.from && x.date <= state.to;
 /* competitor selection: a signal matches when it names a selected company (or mentions it in the headline) */
@@ -387,8 +417,11 @@ function renderHero(){
   document.getElementById("lede").innerHTML = p.length
     ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${act}</strong> need${act === 1 ? "s" : ""} action now and ${balance}.`
     : `No signals${who} in this period. Try a longer period or another leader.`;
+  const ver = p.filter(x => x.verification === "verified").length;
+  const outlets = new Set(p.flatMap(x => (x.sources || []).map(o => o.domain || o.name))).size;
   const tiles = [["", scanned, "Headlines scanned"], ["", p.length, "Signals kept"], ["act", act, "Act now (8+)"],
-    ["tail", tw, "▲ Tailwinds"], ["head", hw, "▼ Headwinds"], ["", cos, "Companies in the news"]];
+    ["", ver, "✓ Verified"], ["tail", tw, "▲ Tailwinds"], ["head", hw, "▼ Headwinds"], ["", outlets, "Outlets reporting"], ["", cos, "Companies named"]];
+  document.getElementById("kpis").style.maxWidth = "1240px";
   document.getElementById("kpis").innerHTML = tiles.map(([c, v, l], i) => `<div class="kpi pop ${c}" style="--d:${i * 60}ms"><b>${v}</b><span>${l}</span></div>`).join("");
 }
 
@@ -453,17 +486,23 @@ function gauge(n, size = 52){
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-label="Impact ${n} of 10"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${C.line}" stroke-width="4"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(n / 10) * c} ${c}" transform="rotate(-90 ${size/2} ${size/2})"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" fill="${C.ink}" style="font:800 ${Math.round(size * 0.42)}px var(--display)">${n}</text></svg>`;
 }
 const sigChip = s => `<span class="sig ${s}">${SIG[s].icon} ${SIG[s].label}</span>`;
+const VER = {verified:["✓", "Verified"], single:["◐", "Single source"], unconfirmed:["?", "Unconfirmed"]};
+const verChip = x => { const v = VER[x.verification] || VER.single; return `<span class="ver ${x.verification}" title="${x.verification === "verified" ? "Official source, or several independent outlets" : x.verification === "single" ? "One credible outlet so far" : "Only lesser-known outlets so far: check before acting"}">${v[0]} ${v[1]}${x.outlets > 1 ? ` · ${x.outlets} outlets` : ""}</span>`; };
+const TIER = {official:"official", tier1:"", tier2:"", tier3:""};
+const outletLine = x => { const src = x.sources || []; const shown = src.slice(0, 4).map(o => `<a href="${esc(o.link)}" target="_blank" rel="noopener">${esc(o.name || o.domain)}</a>${TIER[o.tier] ? `<span class="t">${TIER[o.tier]}</span>` : ""}`);
+  return `<span class="outlets">${src.length > 1 ? "Reported by " : ""}${shown.join(", ")}${src.length > 4 ? ` +${src.length - 4}` : ""}</span>`; };
+const checkChips = x => (x.checks || []).map(c => `<span class="warn">⚠ ${esc(c)}</span>`).join("");
 const when = x => x.published ? esc(x.published) : "seen " + fmt(x.first_seen);
 
 function renderTop3(){
   const top = [...pool()].sort((a, b) => b.impact - a.impact || b.confidence - a.confidence).slice(0, 3);
   document.getElementById("top3").innerHTML = top.length ? top.map((x, i) => `<article class="call pop" style="--d:${i * 90}ms;--sev:var(--heat-${band(x.impact)})">
       <span class="rank">0${i + 1}</span>
-      <div class="meta">${gauge(x.impact, 44)}${sigChip(x.signal)}<span class="chip">${esc(SHORT[x.watch_area] || x.watch_area)}</span></div>
+      <div class="meta">${gauge(x.impact, 44)}${verChip(x)}${sigChip(x.signal)}</div>
       <h3>${esc(x.what_happened)}</h3>
       <dl class="kv"><dt>So what</dt><dd>${esc(x.so_what)}</dd></dl>
       ${x.action ? `<dl class="kv"><dt>Do</dt><dd>${esc(x.action)}</dd></dl>` : ""}
-      <div class="cfoot"><span><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.source)}</a> · ${fmt(x.date)}</span><span>confidence ${x.confidence}/10</span></div>
+      <div class="cfoot">${outletLine(x)}<span>${fmt(x.date)} · confidence ${x.confidence}/10</span></div>
     </article>`).join("") : `<div class="empty">No signals for this leader in this period.</div>`;
 }
 
@@ -575,13 +614,14 @@ function renderCharts(){
 function fillSelect(id, all, opts){ document.getElementById(id).innerHTML = [`<option value="All">${all}</option>`, ...opts.map(o => `<option value="${esc(o)}">${esc(o)}</option>`)].join(""); }
 fillSelect("fArea", "All watch areas", DATA.areas);
 fillSelect("fRegion", "All regions", DATA.regions);
-[["fArea", "area"], ["fRegion", "region"], ["fSignal", "signal"]].forEach(([id, k]) => document.getElementById(id).onchange = e => { state[k] = e.target.value; renderFeed(); });
+[["fArea", "area"], ["fRegion", "region"], ["fSignal", "signal"], ["fVer", "ver"]].forEach(([id, k]) => document.getElementById(id).onchange = e => { state[k] = e.target.value; renderFeed(); });
 document.getElementById("fQ").oninput = e => { state.q = e.target.value.toLowerCase(); renderFeed(); };
 
 function renderFeed(){
   const base = pool();
   const list = base.filter(x => (state.area === "All" || x.watch_area === state.area) && (state.region === "All" || x.region === state.region) &&
     (state.signal === "All" || x.signal === state.signal) &&
+    (state.ver === "All" || (state.ver === "verified" ? x.verification === "verified" : x.verification !== "unconfirmed")) &&
     (!state.q || [x.title, x.what_happened, x.so_what, x.companies.join(" "), x.countries.join(" "), x.region, x.watch_area].join(" ").toLowerCase().includes(state.q)))
     .sort((a, b) => b.impact - a.impact || (b.date > a.date ? 1 : -1));
   document.getElementById("count").textContent = `${list.length} of ${base.length} signals · ${document.getElementById("rangeLabel").textContent}`;
@@ -590,13 +630,44 @@ function renderFeed(){
   feed.innerHTML = list.map((x, i) => `<article class="card pop" style="--d:${Math.min(i, 10) * 45}ms;--sev:var(--heat-${band(x.impact)})">
     <div class="gauge">${gauge(x.impact)}<span>Impact</span></div>
     <div class="cbody">
-      <div class="meta">${x.first_seen === DATA.today ? `<span class="new">NEW</span>` : ""}${sigChip(x.signal)}<span class="chip">${esc(x.watch_area)}</span><span>${esc(x.event_type)}</span><span>${esc(x.region)}</span>${x.companies.length ? `<span>${esc(x.companies.join(", "))}</span>` : ""}</div>
+      <div class="meta">${x.first_seen === DATA.today ? `<span class="new">NEW</span>` : ""}${verChip(x)}${sigChip(x.signal)}${checkChips(x)}<span class="chip">${esc(x.watch_area)}</span><span>${esc(x.event_type)}</span><span>${esc(x.region)}</span>${x.companies.length ? `<span>${esc(x.companies.join(", "))}</span>` : ""}</div>
       <p class="what">${esc(x.what_happened)}</p>
       <dl class="kv"><dt>So what</dt><dd>${esc(x.so_what)}</dd></dl>
       ${x.action ? `<dl class="kv"><dt>Do</dt><dd>${esc(x.action)}</dd></dl>` : ""}
       <div class="cfoot"><div class="who">${x.leaders.map(l => `<span>${esc(l)}</span>`).join("")}</div>
-        <span><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.source)}</a> · ${fmt(x.date, true)}${x.coverage > 1 ? ` · ${x.coverage} outlets` : ""} · confidence ${x.confidence}/10</span></div>
+        <span>${outletLine(x)} · ${fmt(x.date, true)} · confidence ${x.confidence}/10</span></div>
     </div></article>`).join("");
+}
+
+/* ---------- market pulse (commodity prices + listed miners and steelmakers) */
+function spark(points, color){
+  const v = points.map(p => p[1]), lo = Math.min(...v), hi = Math.max(...v), w = 200, h = 44;
+  const xy = v.map((y, i) => [i / (v.length - 1) * (w - 4) + 2, h - 4 - (hi === lo ? .5 : (y - lo) / (hi - lo)) * (h - 10)]);
+  const line = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join("");
+  const [lx, ly] = xy[xy.length - 1];
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${line}L${lx} ${h}L2 ${h}Z" fill="${color}" opacity=".08"/><path d="${line}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="${lx}" cy="${ly}" r="2.6" fill="${color}"/></svg>`;
+}
+const chg = (v, label) => v == null ? "" : `<span class="ch ${v > 0 ? "up" : v < 0 ? "down" : "flat"}">${v > 0 ? "▲" : v < 0 ? "▼" : "■"} ${Math.abs(v).toFixed(1)}% ${label}</span>`;
+const num = v => v >= 1000 ? v.toLocaleString("en-US", {maximumFractionDigits:0}) : v.toLocaleString("en-US", {maximumFractionDigits:2});
+function renderMarkets(){
+  const m = DATA.markets || {}, cs = m.commodities || [], es = (m.equities || []).filter(e => e.change_1m_pct != null);
+  if (!cs.length && !es.length) return;
+  document.getElementById("marketSec").hidden = false;
+  document.getElementById("mkSub").textContent = `Free public data (IMF, BLS and EIA via FRED; share prices via Stooq). Updated ${m.fetched ? fmt(m.fetched.slice(0, 10), true) : ""}.`;
+  document.getElementById("mkts").innerHTML = cs.map((c, i) => `<div class="mk pop" style="--d:${i * 60}ms"><span class="nm">${esc(c.name)}</span>
+    <span class="vl">${num(c.latest)}<small>${esc(c.unit)}</small></span>
+    ${chg(c.change_pct, c.freq === "daily" ? "vs prior day" : "vs prior month")} ${chg(c.yoy_pct, "vs a year ago")}
+    ${spark(c.points, C.steel)}<span class="ft">${esc(c.note)} · ${fmt(c.date, true)}</span></div>`).join("");
+  if (!es.length) { document.getElementById("p-eq").hidden = true; return; }
+  const sorted = [...es].sort((a, b) => b.change_1m_pct - a.change_1m_pct);
+  const best = sorted[0], worst = sorted[sorted.length - 1];
+  document.getElementById("i-eq").innerHTML = `One-month share price change. Best: <b>${esc(best.name)}</b> (${best.change_1m_pct > 0 ? "+" : ""}${best.change_1m_pct}%). Worst: <b>${esc(worst.name)}</b> (${worst.change_1m_pct}%).`;
+  upsert("eq", "bar", {labels:sorted.map(e => e.name), datasets:[{label:"1-month change (%)", data:sorted.map(e => e.change_1m_pct),
+      backgroundColor:sorted.map(e => e.change_1m_pct >= 0 ? C.tail : C.head), borderRadius:4, borderSkipped:false, barThickness:14}]},
+    baseOpts({indexAxis:"y", scales:{x:{grid:{color:C.line, drawTicks:false}, ticks:{color:C.muted, font:{family:MONO, size:11}, callback:v => v + "%"}},
+      y:{grid:{display:false}, ticks:{color:C.ink, font:{family:MONO, size:11}}}},
+      plugins:{legend:legend(false), tooltip:{...tip, callbacks:{label:c => { const e = sorted[c.dataIndex]; return `${e.change_1m_pct}% in 1 month · ${e.change_3m_pct ?? "–"}% in 3 months · last ${num(e.latest)}`; }}}}}));
+  setTable("eq", ["Company", "Last close", "1 month", "3 months", "Date"], sorted.map(e => [e.name, num(e.latest), e.change_1m_pct + "%", (e.change_3m_pct ?? "–") + "%", e.date]));
 }
 
 function renderAll(){ renderCompbar(); renderLeaders(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
@@ -607,6 +678,7 @@ if (window.Chart) {
   document.querySelectorAll(".canvas-box").forEach(b => b.innerHTML = `<div class="nochart">Charts could not load. Use the Table button.</div>`);
 }
 setPreset(state.preset);
+renderMarkets();
 
 /* ---------- 3D hero: grey iron ore pellets and polished steel billets orbit a steel core.
    Pellets pop into place with an elastic ease; steel dust drifts; radar rings pulse outward. */

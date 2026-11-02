@@ -1,7 +1,7 @@
 {
  "scanned": 96,
  "days": 7,
- "note": "Demo: 26 real headlines picked from 96 found by web search on 2 Nov 2026, analysed by Claude in the radar's format. Analysis uses headlines only. Some publication dates were not verified.",
+ "note": "Demo: 26 real headlines picked from 96 found by web search on 2 Nov 2026, analysed by Claude in the radar's format. Outlets listed are the real ones found for each story. Market data appears after the first live run.",
  "items": [
   {
    "title": "Vale Q3 2026 Iron Ore Output Falls 6% to 88.4 Mt, Net Profit Down 53%",
@@ -30,7 +30,25 @@
    "action": "Pull Vale's 3Q26 report for pellet volumes; update the Q1 pricing view.",
    "signal": "neutral",
    "region": "South America",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "IndexBox",
+     "link": "https://www.indexbox.io/blog/vale-reports-6-drop-in-q3-2026-iron-ore-output-to-884-million-tonnes/"
+    },
+    {
+     "name": "GMK Center",
+     "link": "https://gmk.center/en/news/vale-cut-iron-ore-production-by-6-y-y-in-july-september/"
+    },
+    {
+     "name": "BigGo Finance",
+     "link": "https://finance.biggo.com/news/cac2070e-b096-4fb5-99c8-1cd86f9edce6"
+    },
+    {
+     "name": "Vale",
+     "link": "https://vale.com/check-out-the-financial-results-for-q3-26/-/categories"
+    }
+   ]
   },
   {
    "title": "Jindal Steel Duqm procures second plant for Oman complex",
@@ -58,7 +76,13 @@
    "action": "Confirm what the second plant is and its start date; brief the CEO this week.",
    "signal": "headwind",
    "region": "GCC and Middle East",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Oman Observer",
+     "link": "https://www.omanobserver.om/article/1176702/business/jindal-steel-duqm-procures-second-plant-for-oman-complex"
+    }
+   ]
   },
   {
    "title": "[SMM Analysis] Environmental Protection-Driven Production Restrictions Weigh on Prices, Iron Ore Prices Expected to Consolidate at Lows Next Week",
@@ -84,7 +108,13 @@
    "action": "Time the next concentrate purchase for the low; watch the pellet premium.",
    "signal": "neutral",
    "region": "China",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Shanghai Metals Market",
+     "link": "https://news.metal.com/newscontent/104187698-smm-analysis-environmental-protection-driven-production-restrictions-weigh-on-prices-iron-ore-prices-expected-to-consolidate-at-lows-next-week"
+    }
+   ]
   },
   {
    "title": "U.S. Steel breaks ground on $1.9 billion DRI plant in Osceola, Arkansas",
@@ -112,7 +142,13 @@
    "action": "Add to the DR-grade demand model; track how it sources pellets.",
    "signal": "tailwind",
    "region": "North America",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Shanghai Metals Market",
+     "link": "https://news.metal.com/newscontent/104189804-us-steel-breaks-ground-on-19-billion-dri-plant-in-osceola-arkansas"
+    }
+   ]
   },
   {
    "title": "Proposal to launch DR-grade iron ore pellet premium weekly indicator",
@@ -138,7 +174,13 @@
    "action": "Respond to the consultation; review price clauses in pellet contracts.",
    "signal": "tailwind",
    "region": "Global",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Fastmarkets",
+     "link": "https://www.fastmarkets.com/insights/proposal-to-launch-dr-grade-iron-ore-pellet-premium-weekly-indicator/"
+    }
+   ]
   },
   {
    "title": "Metinvest to raise annual DR pellet output at Northern Iron Ore to four million mt",
@@ -165,7 +207,13 @@
    "action": "Map Metinvest's likely target customers against ours.",
    "signal": "headwind",
    "region": "Europe",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "SteelOrbis",
+     "link": "https://www.steelorbis.com/steel-news/latest-news/metinvest-to-raise-annual-dr-pellet-output-at-northern-iron-ore-to-four-million-mt-1435975.htm"
+    }
+   ]
   },
   {
    "title": "thyssenkrupp Steel secures revised funding terms for Duisburg tkH2Steel decarbonization project",
@@ -192,7 +240,13 @@
    "action": "Follow its pellet supply tenders; add to the European buyer list.",
    "signal": "tailwind",
    "region": "Europe",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "EuropaWire",
+     "link": "https://news.europawire.eu/thyssenkrupp-steel-secures-revised-funding-terms-for-duisburg-tkh2steel-decarbonization-project/eu-press-release/2026/10/30/16/18/09/185221"
+    }
+   ]
   },
   {
    "title": "Early signs that the EU carbon border adjustment mechanism is reshaping EU–India steel trade",
@@ -219,7 +273,13 @@
    "action": "Estimate our CBAM cost per tonne for EU-bound steel.",
    "signal": "neutral",
    "region": "Europe",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Nature Climate Change",
+     "link": "https://www.nature.com/articles/s41558-026-02607-y"
+    }
+   ]
   },
   {
    "title": "JFE Steel manufactures first DRI prototype powered by green hydrogen",
@@ -245,7 +305,17 @@
    "action": "Ask the process team for a short brief on hydrogen DRI pellet specs.",
    "signal": "neutral",
    "region": "Asia Pacific",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Yieh",
+     "link": "https://yieh.com/en/News/jfe-steel-manufactures-first-dri-prototype-powered-by-green-hydrogen/161814"
+    },
+    {
+     "name": "IndexBox",
+     "link": "https://www.indexbox.io/blog/jfe-steel-achieves-japans-first-green-hydrogen-based-dri-production/"
+    }
+   ]
   },
   {
    "title": "MagIron's tests confirm premium DR-grade pellet quality",
@@ -272,7 +342,17 @@
    "action": "",
    "signal": "headwind",
    "region": "North America",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "SteelOrbis",
+     "link": "https://www.steelorbis.com/steel-news/latest-news/magirons-tests-confirm-premium-dr-grade-pellet-quality-1472457.htm"
+    },
+    {
+     "name": "Mysteel",
+     "link": "https://www.mysteel.net/news/5138027-magiron-posts-strong-dr-grade-pellet-test-results"
+    }
+   ]
   },
   {
    "title": "Momentum shifts east in green steel transition",
@@ -295,7 +375,13 @@
    "action": "Include in the 2027 market strategy review.",
    "signal": "neutral",
    "region": "Global",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "IEEFA",
+     "link": "https://ieefa.org/resources/momentum-shifts-east-green-steel-transition"
+    }
+   ]
   },
   {
    "title": "Steel: Confimi's Italian foundries take on Brussels: tariffs and the CBAM are hurting the supply chain",
@@ -322,7 +408,13 @@
    "action": "",
    "signal": "neutral",
    "region": "Europe",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Eunews",
+     "link": "https://www.eunews.it/en/2026/10/30/steel-confimis-italian-foundries-take-on-brussels-tariffs-and-the-cbam-are-hurting-the-supply-chain/"
+    }
+   ]
   },
   {
    "title": "UK steel industry expects higher prices in 2027, concerns that fabricated goods imports undermine safeguards and CBAM",
@@ -346,7 +438,13 @@
    "action": "",
    "signal": "neutral",
    "region": "Europe",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "Shanghai Metals Market",
+     "link": "https://news.metal.com/newscontent/104189806-uk-steel-industry-expects-higher-prices-in-2027-concerns-that-fabricated-goods-imports-undermine-safeguards-and-cbam"
+    }
+   ]
   },
   {
    "title": "LKAB to shut Kiruna pellet plant for months, cutting 2026 shipments",
@@ -374,7 +472,25 @@
    "so_what": "Less pellet supply from a major European seller. Its DR and BF pellet customers will look for other suppliers, which supports premiums.",
    "action": "Contact LKAB's European customers this month with spot and term offers.",
    "first_seen": "2026-11-02",
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "Mysteel",
+     "link": "https://www.mysteel.net/news/5118092-lkab-to-shut-kiruna-pellet-plant-for-months-cutting-2026-shipments"
+    },
+    {
+     "name": "GMK Center",
+     "link": "https://gmk.center/en/news/lkab-will-temporarily-shut-down-one-of-its-pellet-plants-in-kiruna/"
+    },
+    {
+     "name": "Yieh",
+     "link": "https://yieh.com/en/News/lkab-halts-pellet-plant-operations-in-kiruna-due-to-mining-sequence-adjustments/159912"
+    },
+    {
+     "name": "LKAB",
+     "link": "https://lkab.com/en/press/lkab-reduces-production-volumes-in-kiruna/"
+    }
+   ]
   },
   {
    "title": "Simandou ore shipments could exceed 20 million tonnes in 2026",
@@ -402,7 +518,13 @@
    "so_what": "A large new high-grade supply source pressures iron ore prices: cheaper feed for us, but it can also weigh on pellet prices.",
    "action": "Add Simandou volumes to the 2027 ore price and feed cost scenarios.",
    "first_seen": "2026-11-02",
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "GMK Center",
+     "link": "https://gmk.center/en/news/ore-shipments-from-simandou-could-exceed-20-million-tonnes-in-2026/"
+    }
+   ]
   },
   {
    "title": "Rio Tinto's iron ore sales rise in Q3 2026 as Simandou ramp-up advances",
@@ -431,7 +553,21 @@
    "what_happened": "Rio Tinto's iron ore sales rose in Q3 2026 as its Simandou project ramped up.",
    "so_what": "More seaborne ore from the largest miner keeps iron ore prices under pressure through Q4.",
    "action": "Check if term ore contracts can be repriced lower.",
-   "first_seen": "2026-11-02"
+   "first_seen": "2026-11-02",
+   "sources": [
+    {
+     "name": "SteelOrbis",
+     "link": "https://www.steelorbis.com/steel-news/latest-news/rio-tintos-iron-ore-sales-rise-in-q3-2026-as-simandou-ramp-up-advances-1483543.htm"
+    },
+    {
+     "name": "Bloomberg",
+     "link": "https://www.bloomberg.com/news/articles/2026-10-13/rio-tinto-maintains-copper-production-while-iron-ore-sales-rise"
+    },
+    {
+     "name": "Yahoo Finance",
+     "link": "https://finance.yahoo.com/markets/commodities/articles/rio-tinto-reports-2-y-154600452.html"
+    }
+   ]
   },
   {
    "title": "Fortescue Q1 FY27 iron ore shipments fall 5.8% YoY to 46.8 Mt",
@@ -458,7 +594,13 @@
    "action": "",
    "first_seen": "2026-11-02",
    "coverage": 1,
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "Shanghai Metals Market",
+     "link": "https://news.metal.com/newscontent/104176046-smm-analysis-fortescue-q1-fy27-iron-ore-shipments-fall-58-yoy-to-468-mt-lump-share-rises-to-81"
+    }
+   ]
   },
   {
    "title": "World crude steel output down 0.2 percent in September 2026",
@@ -484,7 +626,25 @@
    "so_what": "Flat global steel output means flat demand for pellets and DRI feed; growth must come from taking share.",
    "action": "",
    "first_seen": "2026-11-02",
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "SteelOrbis",
+     "link": "https://www.steelorbis.com/steel-news/latest-news/world-crude-steel-output-down-02-percent-in-september-2026-1485821.htm"
+    },
+    {
+     "name": "worldsteel",
+     "link": "https://worldsteel.org/media/press-releases/2026/september-2026-crude-steel-production/"
+    },
+    {
+     "name": "Shanghai Metals Market",
+     "link": "https://news.metal.com/newscontent/104176878-global-crude-steel-output-at-1424-mt-in-september-down-02-yy"
+    },
+    {
+     "name": "IndexBox",
+     "link": "https://www.indexbox.io/blog/global-crude-steel-output-edges-lower-in-september-2026/"
+    }
+   ]
   },
   {
    "title": "China's September crude steel output rises 0.1% year on year, ending months-long slump",
@@ -509,7 +669,13 @@
    "so_what": "A tentative floor in Chinese output could stabilise iron ore demand, though one month is not a trend.",
    "action": "Watch October output before changing the price outlook.",
    "first_seen": "2026-11-02",
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "BigGo Finance",
+     "link": "https://finance.biggo.com/news/f145d705-cdda-45fa-8aa3-4d27fa87a0b7"
+    }
+   ]
   },
   {
    "title": "China mill profitability falls to 7%",
@@ -534,7 +700,13 @@
    "so_what": "Loss-making Chinese mills cut output and push cheap steel exports, which pressures steel prices in our markets.",
    "action": "Stress-test steel margins for lower Asian export prices.",
    "first_seen": "2026-11-02",
-   "coverage": 1
+   "coverage": 1,
+   "sources": [
+    {
+     "name": "ScrapMonster",
+     "link": "https://www.scrapmonster.com/news/steel/china-mill-profitability-falls-to-7-2026-10-19/100272"
+    }
+   ]
   },
   {
    "title": "Freight rates for iron ore fell in October compared to September",
@@ -557,7 +729,13 @@
    "so_what": "Cheaper sea freight lowers the landed cost of imported ore and concentrate.",
    "action": "Fix freight for Q1 cargoes while rates are lower.",
    "first_seen": "2026-11-02",
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "GMK Center",
+     "link": "https://gmk.center/en/news/freight-rates-for-iron-ore-fell-in-october-compared-to-september/"
+    }
+   ]
   },
   {
    "title": "India extends import duties on flat steel to 3 years",
@@ -583,7 +761,13 @@
    "action": "Shift Indian focus from steel sales to pellet supply.",
    "first_seen": "2026-11-02",
    "coverage": 1,
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "Argus",
+     "link": "https://www.argusmedia.com/en/news-and-insights/latest-market-news/2770881-india-extends-import-duties-on-flat-steel-to-3-years"
+    }
+   ]
   },
   {
    "title": "Hadeed holds October long steel prices as demand remains slow",
@@ -610,7 +794,13 @@
    "action": "Hold GCC long product prices; avoid building stock.",
    "first_seen": "2026-11-02",
    "coverage": 1,
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "MEsteel",
+     "link": "https://news.mesteel.com/hadeed-holds-october-long-steel-prices-as-demand-remains-slow/"
+    }
+   ]
   },
   {
    "title": "EMSTEEL advances sustainable steelmaking with electric process gas heater pilot",
@@ -636,7 +826,13 @@
    "action": "Ask the process team to review the electric heater pilot.",
    "first_seen": "2026-11-02",
    "coverage": 1,
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "MEsteel",
+     "link": "https://news.mesteel.com/emsteel-advances-sustainable-steelmaking-with-electric-process-gas-heater-pilot/"
+    }
+   ]
   },
   {
    "title": "ArcelorMittal Q3 2026 earnings due 5 November",
@@ -661,7 +857,13 @@
    "action": "Benchmark its EBITDA per tonne against ours after release.",
    "first_seen": "2026-11-02",
    "coverage": 1,
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "MarketBeat",
+     "link": "https://www.marketbeat.com/earnings/reports/2026-11-5-arcelormittal-stock/"
+    }
+   ]
   },
   {
    "title": "SMM: September global crude steel outlook, European supply squeeze overshadows headline swings",
@@ -683,7 +885,13 @@
    "action": "",
    "first_seen": "2026-11-02",
    "coverage": 1,
-   "published": ""
+   "published": "",
+   "sources": [
+    {
+     "name": "Shanghai Metals Market",
+     "link": "https://news.metal.com/newscontent/104188742-smm-analysis-september-2026-global-crude-steel-market-outlook-european-supply-squeeze-overshadows-headline-swings"
+    }
+   ]
   }
  ]
 }

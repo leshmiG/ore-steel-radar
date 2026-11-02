@@ -94,3 +94,57 @@ def test_demo_builds(tmp_path):
     page = html_path.read_text(encoding="utf-8")
     assert "LKAB" in page and '"2026-10-30"' in page and "competitor_groups" in page
     assert "## CFO" in md_path.read_text(encoding="utf-8")
+
+
+def test_source_tiers_and_verification(tmp_path):
+    cfg = make_cfg(tmp_path)
+    assert radar.tier_of("reuters.com", cfg) == "tier1"
+    assert radar.tier_of("news.mining.com", cfg) == "tier2"
+    assert radar.tier_of("lkab.com", cfg) == "official"
+    assert radar.tier_of("commerce.gov", cfg) == "official"
+    assert radar.tier_of("randomblog.net", cfg) == "tier3"
+    src = lambda *t: [{"domain": f"d{i}.com", "name": f"d{i}", "tier": x} for i, x in enumerate(t)]
+    assert radar.verification(src("official")) == "verified"
+    assert radar.verification(src("tier1", "tier3")) == "verified"
+    assert radar.verification(src("tier3", "tier3", "tier3")) == "verified"
+    assert radar.verification(src("tier2")) == "single"
+    assert radar.verification(src("tier3")) == "unconfirmed"
+    assert radar.verification(src("tier3", "tier3")) == "unconfirmed"
+
+
+def test_figure_check_flags_invented_numbers():
+    source = "Vale Q3 iron ore output falls 6% to 88.4 Mt, net profit down 53%"
+    assert radar.figure_check("Output fell 6% to 88.4 Mt.", source) == []
+    assert radar.figure_check("Output fell 9% to 88.4 Mt.", source) == ["9"]
+    assert radar.figure_check("Sales of 1,200 t", "sales of 1200 t") == []
+
+
+def test_collect_counts_distinct_outlets(tmp_path):
+    cfg = make_cfg(tmp_path)
+    db = radar.connect(str(tmp_path / "radar.db"))
+    radar.collect(cfg, db, [("test", FEED)])
+    radar.collect(cfg, db, [("test", FEED)])            # same outlets again must not inflate coverage
+    row = db.execute("SELECT id, coverage FROM items WHERE title LIKE 'Vale%'").fetchone()
+    assert row["coverage"] == 2
+    domains = {r["domain"] for r in db.execute("SELECT domain FROM item_sources WHERE item_id = ?", (row["id"],))}
+    assert "reuters.com" in domains
+
+
+def test_markets_parse_and_keep_last_good(tmp_path, monkeypatch):
+    cfg = make_cfg(tmp_path)
+    monkeypatch.setattr(radar, "ROOT", tmp_path)
+    monthly = [["observation_date", "X"]] + [[f"20{24 + m // 12}-{m % 12 + 1:02d}-01", str(100 + m)] for m in range(30)]
+    daily = [["Date", "Open", "High", "Low", "Close", "Volume"]] + [[f"2026-{6 + d // 28:02d}-{d % 28 + 1:02d}", "1", "1", "1", str(10 + d * 0.1), "5"] for d in range(120)]
+    cfg["markets"] = {"commodities": [{"id": "PIORECRUSDM", "name": "Iron ore", "unit": "$/t", "note": ""}],
+                      "equities": [{"symbol": "vale.us", "name": "Vale"}]}
+    monkeypatch.setattr(radar, "fetch_csv", lambda url: monthly if "fred" in url else daily)
+    out = radar.fetch_markets(cfg)
+    c, e = out["commodities"][0], out["equities"][0]
+    assert c["freq"] == "monthly" and c["latest"] == 129 and c["change_pct"] == round((129 / 128 - 1) * 100, 1)
+    assert c["yoy_pct"] == round((129 / 117 - 1) * 100, 1)
+    assert e["change_1m_pct"] is not None and e["latest"] == round(10 + 119 * 0.1, 10)
+    def boom(url):
+        raise OSError("offline")
+    monkeypatch.setattr(radar, "fetch_csv", boom)
+    again = radar.fetch_markets(cfg)                    # sources down: keep the last good values
+    assert again["commodities"][0]["latest"] == 129 and again["equities"][0]["name"] == "Vale"

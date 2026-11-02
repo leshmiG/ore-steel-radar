@@ -1,21 +1,38 @@
 # Ore & Steel Radar
 
 Fully automatic global intelligence for iron ore, pellets, DRI and steel. Every morning it reads the news on
-28 industry topics and 80+ companies worldwide, keeps what matters, has Claude score each item, and publishes an
+28 industry topics, 80+ companies and 36 industry websites (Fastmarkets, Argus, S&P Global, Mysteel, SMM, Kallanish,
+Reuters, GCC and Indian business press and more), pulls free market data, keeps what matters, has Claude score each item, and publishes an
 animated dashboard and a brief for the **CEO, CFO, CTO (operations), SMO and CPO**. No company details needed.
 
 ```
-Google News searches + industry feeds (~50 sources)
-  -> keyword pre-filter -> dedupe (one story from many outlets = 1 signal, outlets counted)
+Google News searches, 36 industry websites and RSS feeds (~85 sources) + FRED/Stooq market data
+  -> keyword pre-filter -> dedupe (one story from many outlets = 1 signal, every outlet recorded)
   -> triage with a fast model (drops off-topic headlines cheaply)
   -> Claude analysis: watch area, region, companies, tailwind/headwind, impact 1-10, confidence, so what, action, leaders
+  -> checks: source credibility, cross-outlet verification, figures in the summary must appear in the source text
   -> data/radar.db (history) -> docs/index.html (dashboard) + docs/brief.md (brief) + docs/data/<date>.json (one file per day)
 ```
+
+## How information is checked
+
+| Check | What it does |
+| --- | --- |
+| Source credibility | Every outlet is rated: official (company, exchange, government, worldsteel), tier 1 (Reuters, Bloomberg, Fastmarkets, Argus, S&P Global, Mysteel, SMM, Kallanish), tier 2 (established trade and regional press) or tier 3 (everything else). Edit the lists under `source_tiers` in `config.yaml`. |
+| Cross-outlet verification | **Verified** = an official source, or 2+ independent outlets including a credible one, or 3+ outlets. **Single source** = one credible outlet so far. **Unconfirmed** = only lesser-known outlets. Status upgrades automatically as more outlets report the story. |
+| Figure check | Every number in the AI's "what happened" must appear in the source headline or summary; otherwise the card shows a warning. |
+| Confidence caps | Unconfirmed signals are capped at 5/10 confidence and single-source at 7/10; a failed figure check costs 2 points. |
+| Grounding | Claude is told to use only the headline and summary and never invent numbers, names or dates. Every card links to all outlets. |
+
+Paywalled sites (Fastmarkets, Argus, S&P Global, Kallanish) are read through their public headlines and snippets only.
 
 ## What the dashboard shows
 
 - **Date filters** in the top bar: Day, 7 days, 30 days, All, or a custom range, with arrows to step back through
   previous days or weeks. Older days load on demand from `docs/data/`, so the page stays fast.
+- **Market pulse:** iron ore, Australian coal, European gas, US steel PPI and Brent prices with sparklines, plus
+  one- and three-month share price moves of Vale, Rio Tinto, BHP, ArcelorMittal, Nucor, POSCO and others.
+- **Verification badges and outlet lists** on every signal, and a "Verified only" filter.
 - **Headline ticker** of the top 10 signals, and a **3D hero** of grey iron ore pellets and steel billets orbiting a steel core
 - **Leader switch** (Everyone, CEO, CFO, CTO, SMO, CPO) that filters every number, chart and signal
 - **Top 3 calls** for the selected leader, each with so what and a suggested action
@@ -86,7 +103,7 @@ For Amazon Bedrock instead of the Anthropic API, set `llm_provider: bedrock`, `b
 | Command | What it does |
 | --- | --- |
 | `python radar.py run` | Collect, analyse and report: the daily job |
-| `python radar.py collect` / `analyse` / `report` | Run one step |
+| `python radar.py collect` / `analyse` / `markets` / `report` | Run one step |
 | `python radar.py report --days 30` | Dashboard for the last 30 days |
 | `python radar.py serve [--daily 06:30]` | Host `docs/` on port 8000, optionally refreshing daily |
 | `python radar.py demo` | Build the dashboard from the demo data |

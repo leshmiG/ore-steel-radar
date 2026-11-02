@@ -9,16 +9,18 @@ Google News searches + industry feeds (~50 sources)
   -> keyword pre-filter -> dedupe (one story from many outlets = 1 signal, outlets counted)
   -> triage with a fast model (drops off-topic headlines cheaply)
   -> Claude analysis: watch area, region, companies, tailwind/headwind, impact 1-10, confidence, so what, action, leaders
-  -> data/radar.db (history) -> docs/index.html (dashboard) + docs/brief.md (brief) + docs/archive/<date>.html
+  -> data/radar.db (history) -> docs/index.html (dashboard) + docs/brief.md (brief) + docs/data/<date>.json (one file per day)
 ```
 
 ## What the dashboard shows
 
-- **Headline ticker** of the top 10 signals, and a **3D hero** of iron ore pellets around a furnace glow
+- **Date filters** in the top bar: Day, 7 days, 30 days, All, or a custom range, with arrows to step back through
+  previous days or weeks. Older days load on demand from `docs/data/`, so the page stays fast.
+- **Headline ticker** of the top 10 signals, and a **3D hero** of grey iron ore pellets and steel billets orbiting a steel core
 - **Leader switch** (Everyone, CEO, CFO, CTO, SMO, CPO) that filters every number, chart and signal
 - **Top 3 calls** for the selected leader, each with so what and a suggested action
 - **Charts:** pressure by watch area (radar), signal matrix (impact vs confidence, act-now zone),
-  tailwinds vs headwinds, companies in the news, regions, and daily signal flow (after 3 days of history).
+  tailwinds vs headwinds, companies in the news, regions, and daily signal flow (click a day to drill in).
   Every chart has a table view.
 - **All signals** with filters by watch area, region, tailwind/headwind and search; every item links to its source
 
@@ -29,7 +31,7 @@ Google News searches + industry feeds (~50 sources)
 | `radar.py` | The pipeline: collect, triage, analyse, report, serve |
 | `templates/dashboard.html` | Dashboard design (Three.js hero, Chart.js charts) |
 | `config.yaml` | Topics, companies by group, feeds, leaders, watch areas, regions, settings |
-| `docs/` | Published dashboard, brief and daily archive (GitHub Pages serves this) |
+| `docs/` | Published dashboard, brief and per-day data files (GitHub Pages serves this) |
 | `data/` | SQLite history of every headline and analysis |
 | `demo/demo_items.json` | Demo data used by `python radar.py demo` |
 | `tests/` | Offline tests with a sample feed and a fake Claude client |
@@ -98,7 +100,8 @@ Everything works out of the box. To tune it, edit `config.yaml`:
   GCC/Middle East/Africa, green steel and technology). Add or remove names freely.
 - `topics`: each becomes a Google News search.
 - `perspective`: the viewpoint for the so-what (a generic GCC pellet and steel producer by default).
-- `settings`: models, impact thresholds, cost cap (`max_items_per_run`), dashboard window (`report_days`).
+- `settings`: models, impact thresholds, cost cap (`max_items_per_run`), default dashboard window (`report_days`)
+  and how many days of history the date filter keeps (`history_days`, default 90).
 
 ## Cost
 

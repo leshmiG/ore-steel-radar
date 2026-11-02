@@ -179,6 +179,7 @@ settings:
   max_items_per_run: 500       # cost guard
   min_impact_for_brief: 5
   alert_impact: 8
-  report_days: 7               # dashboard window
+  report_days: 7               # default dashboard window (days)
+  history_days: 90             # days kept for the date filter
   db_path: data/radar.db
   output_dir: docs             # GitHub Pages serves this folder

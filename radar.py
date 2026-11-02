@@ -349,41 +349,78 @@ def analyse(cfg, db):
 
 
 # ---------------------------------------------------------------- report
-def load_items(db, days):
-    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
-    scanned = db.execute("SELECT COUNT(*) FROM items WHERE first_seen >= ?", (since,)).fetchone()[0]
+def item_date(published, first_seen):
+    """The day the news happened: the feed's publish date, else the day the radar first saw it."""
+    from email.utils import parsedate_to_datetime
+    try:
+        return parsedate_to_datetime(published).date().isoformat()
+    except (TypeError, ValueError, IndexError):
+        pass
+    if re.match(r"\d{4}-\d{2}-\d{2}", published or ""):
+        return published[:10]
+    return first_seen[:10]
+
+
+def load_items(db, history_days):
+    """All relevant signals first seen in the last `history_days`, plus headlines scanned per day."""
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=history_days)).isoformat()
+    scanned = {r[0]: r[1] for r in db.execute(
+        "SELECT substr(first_seen,1,10), COUNT(*) FROM items WHERE first_seen >= ? GROUP BY 1", (since,))}
     rows = db.execute("""SELECT i.*, n.* FROM items i JOIN insights n ON n.item_id = i.id
                          WHERE i.first_seen >= ? AND n.relevant = 1 ORDER BY n.impact DESC, i.first_seen DESC""",
                       (since,)).fetchall()
     items = [{
         "title": r["title"], "link": r["link"], "source": r["source"], "published": (r["published"] or "")[:16],
-        "first_seen": r["first_seen"][:10], "coverage": r["coverage"], "watch_area": r["watch_area"],
-        "event_type": r["event_type"], "companies": json.loads(r["companies"] or "[]"),
-        "countries": json.loads(r["countries"] or "[]"), "region": r["region"] or "Global",
-        "leaders": json.loads(r["leaders"] or "[]"), "signal": r["signal"] or "neutral", "impact": r["impact"],
-        "confidence": r["confidence"], "what_happened": r["what_happened"], "so_what": r["so_what"],
-        "action": r["action"]} for r in rows]
+        "date": item_date(r["published"], r["first_seen"]), "first_seen": r["first_seen"][:10],
+        "coverage": r["coverage"], "watch_area": r["watch_area"], "event_type": r["event_type"],
+        "companies": json.loads(r["companies"] or "[]"), "countries": json.loads(r["countries"] or "[]"),
+        "region": r["region"] or "Global", "leaders": json.loads(r["leaders"] or "[]"), "signal": r["signal"] or "neutral",
+        "impact": r["impact"], "confidence": r["confidence"], "what_happened": r["what_happened"],
+        "so_what": r["so_what"], "action": r["action"]} for r in rows]
     return scanned, items
 
 
-def write_reports(cfg, scanned, items, days, note=""):
-    out = ROOT / cfg["settings"].get("output_dir", "docs")
-    (out / "archive").mkdir(parents=True, exist_ok=True)
+def write_reports(cfg, scanned_by_day, items, days, note=""):
+    """docs/index.html embeds the last `days` days; every day also gets docs/data/<date>.json for the date filter."""
+    s = cfg["settings"]
+    out = ROOT / s.get("output_dir", "docs")
+    data_dir = out / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
     today = dt.date.today().isoformat()
-    data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "days": days,
-            "scanned": scanned, "companies_tracked": len(cfg["companies"]), "leaders": cfg["leaders"],
-            "areas": cfg["watch_areas"], "regions": cfg["regions"], "items": items, "note": note}
+
+    by_day = {}
+    for x in items:
+        by_day.setdefault(x["date"], []).append(x)
+    all_days = sorted(set(by_day) | set(scanned_by_day))
+    for d in all_days:  # one small file per day, loaded on demand by the dashboard
+        (data_dir / f"{d}.json").write_text(json.dumps({"date": d, "items": by_day.get(d, [])}, ensure_ascii=False), encoding="utf-8")
+    keep = {f"{d}.json" for d in all_days} | {"days.json"}
+    for f in data_dir.glob("*.json"):  # drop days that fell out of the history window
+        if f.name not in keep:
+            f.unlink()
+    day_list = [{"date": d, "signals": len(by_day.get(d, [])), "scanned": scanned_by_day.get(d, 0)} for d in all_days]
+    (data_dir / "days.json").write_text(json.dumps(day_list), encoding="utf-8")
+
+    latest = max(all_days) if all_days else today
+    start = (dt.date.fromisoformat(latest) - dt.timedelta(days=days - 1)).isoformat()
+    inline_days = [d for d in all_days if d >= start]
+    inline = [x for x in items if x["date"] >= start]
+    data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
+            "default_days": days, "day_list": day_list, "inline_days": inline_days,
+            "companies_tracked": len(cfg["companies"]), "leaders": cfg["leaders"], "areas": cfg["watch_areas"],
+            "regions": cfg["regions"], "items": inline, "note": note}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     html_path = out / "index.html"
     html_path.write_text(page, encoding="utf-8")
-    (out / "archive" / f"{today}.html").write_text(page, encoding="utf-8")
 
-    min_imp = cfg["settings"].get("min_impact_for_brief", 5)
+    min_imp = s.get("min_impact_for_brief", 5)
+    recent = sorted(inline, key=lambda x: (-x["impact"], -x["confidence"]))
     lines = [f"# Ore & Steel Radar brief, {today}", "",
-             f"{scanned} headlines scanned in the last {days} days, {len(items)} relevant signals.", ""]
+             f"{sum(scanned_by_day.get(d, 0) for d in inline_days)} headlines scanned, {len(inline)} relevant signals "
+             f"({start} to {latest}).", ""]
     for leader in LEADERS:
-        top = [x for x in items if leader in x["leaders"] and x["impact"] >= min_imp][:5]
+        top = [x for x in recent if leader in x["leaders"] and x["impact"] >= min_imp][:5]
         lines.append(f"## {leader}")
         if not top:
             lines.append("- Nothing above the impact threshold.")
@@ -394,21 +431,23 @@ def write_reports(cfg, scanned, items, days, note=""):
     md_path = out / "brief.md"
     md_path.write_text("\n".join(lines), encoding="utf-8")
 
-    for a in [x for x in items if x["impact"] >= cfg["settings"].get("alert_impact", 8)]:
+    for a in [x for x in inline if x["impact"] >= s.get("alert_impact", 8) and x["first_seen"] == today]:
         print(f"ALERT [{a['impact']}/10] {', '.join(a['leaders'])}: {a['what_happened']} {a['link']}")
-    print(f"report: index.html and brief.md written to {out}")
+    print(f"report: index.html, brief.md and {len(all_days)} day files written to {out}")
     return html_path, md_path
 
 
 def report(cfg, db, days=7):
-    scanned, items = load_items(db, days)
+    scanned, items = load_items(db, cfg["settings"].get("history_days", 90))
     return write_reports(cfg, scanned, items, days)
 
 
 def demo(cfg):
     data = json.loads((ROOT / "demo" / "demo_items.json").read_text(encoding="utf-8"))
     items = sorted(data["items"], key=lambda x: -x["impact"])
-    return write_reports(cfg, data["scanned"], items, data.get("days", 7), data.get("note", ""))
+    for x in items:
+        x["date"] = item_date(x.get("published", ""), x["first_seen"])
+    return write_reports(cfg, {items[0]["first_seen"]: data["scanned"]}, items, data.get("days", 7), data.get("note", ""))
 
 
 # ---------------------------------------------------------------- hosting

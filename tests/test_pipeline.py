@@ -43,6 +43,16 @@ def test_fallback_analysis_and_report(tmp_path, monkeypatch):
     assert page.startswith("<!doctype html>") and "Port strike" in page and "__DATA__" not in page
     brief = md_path.read_text(encoding="utf-8")
     assert "## CFO" in brief and "## CTO" in brief
+    data_dir = Path(cfg["settings"]["output_dir"]) / "data"
+    days = json.loads((data_dir / "days.json").read_text(encoding="utf-8"))
+    assert days and all((data_dir / f"{d['date']}.json").exists() for d in days)
+    assert sum(len(json.loads((data_dir / f"{d['date']}.json").read_text())["items"]) for d in days) == 3
+
+
+def test_item_date_uses_publish_date():
+    assert radar.item_date("Fri, 30 Oct 2026 10:00:00 GMT", "2026-11-02T01:00:00+00:00") == "2026-10-30"
+    assert radar.item_date("2026-10-13", "2026-11-02T01:00:00+00:00") == "2026-10-13"
+    assert radar.item_date("", "2026-11-02T01:00:00+00:00") == "2026-11-02"
 
 
 def test_triage_then_analysis(tmp_path, monkeypatch):
@@ -81,5 +91,6 @@ def test_triage_then_analysis(tmp_path, monkeypatch):
 def test_demo_builds(tmp_path):
     cfg = make_cfg(tmp_path)
     html_path, md_path = radar.demo(cfg)
-    assert "LKAB" in html_path.read_text(encoding="utf-8")
+    page = html_path.read_text(encoding="utf-8")
+    assert "LKAB" in page and '"2026-10-30"' in page
     assert "## CFO" in md_path.read_text(encoding="utf-8")

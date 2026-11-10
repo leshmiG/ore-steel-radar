@@ -285,7 +285,7 @@ def gdelt_records(query, window=None, timespan="2d", maxrecords=75):
                "source": a.get("domain", ""), "domain": domain_of(a.get("url")) or a.get("domain", ""), "published": published}
 
 
-def collect(cfg, db, sources=None, pause=0.0, dedupe_days=3, window=None):
+def collect(cfg, db, sources=None, pause=0.0, dedupe_days=14, window=None):
     """Pull RSS feeds (plus GDELT unless `sources` overrides). One story from many outlets = one item."""
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=dedupe_days)).isoformat()
     seen = Deduper((r["id"], r["title"]) for r in db.execute("SELECT id, title FROM items WHERE first_seen >= ?", (since,)))
@@ -302,6 +302,8 @@ def collect(cfg, db, sources=None, pause=0.0, dedupe_days=3, window=None):
         item_id = hashlib.sha1(key.encode()).hexdigest()[:16]
         outlet = rec["domain"] or rec["source"].lower()
         match = seen.match(item_id, key)
+        if not match and db.execute("SELECT 1 FROM items WHERE id = ?", (item_id,)).fetchone():
+            match = item_id  # seen on an earlier day, outside the dedupe window
         if match:  # same story from another outlet: record the outlet, count distinct outlets
             db.execute("INSERT OR IGNORE INTO item_sources VALUES(?,?,?,?,?)", (match, rec["source"], outlet, rec["link"], now_iso()))
             db.execute("UPDATE items SET coverage = (SELECT COUNT(*) FROM item_sources WHERE item_id = ?) WHERE id = ?", (match, match))
@@ -318,17 +320,33 @@ def collect(cfg, db, sources=None, pause=0.0, dedupe_days=3, window=None):
             time.sleep(pause)
         try:
             for rec in rss_records(url, label):
-                ingest(rec, label)
+                try:
+                    ingest(rec, label)
+                except sqlite3.Error as exc:  # one bad record never drops the rest of the feed
+                    print(f"collect: skipped one item from {label} ({exc})")
         except Exception as exc:  # one bad feed never stops the run
             print(f"collect: {label} failed ({exc})")
     if sources is None:
+        throttled = 0
         for q in cfg.get("gdelt_queries", []):
-            time.sleep(5)  # GDELT asks for at most one request every 5 seconds
-            try:
-                for rec in gdelt_records(q, window):
-                    ingest(rec, f"gdelt:{q}")
-            except Exception as exc:
-                print(f"collect: GDELT '{q}' failed ({exc})")
+            if throttled >= 2:
+                print("collect: GDELT is rate-limiting this runner; skipping the remaining GDELT queries")
+                break
+            for attempt in (1, 2):
+                time.sleep(8 if attempt == 1 else 30)  # GDELT asks for at most one request every 5 seconds
+                try:
+                    for rec in gdelt_records(q, window):
+                        try:
+                            ingest(rec, f"gdelt:{q}")
+                        except sqlite3.Error as exc:
+                            print(f"collect: skipped one GDELT item ({exc})")
+                    break
+                except Exception as exc:
+                    if "429" in str(exc) and attempt == 1:
+                        continue
+                    throttled += "429" in str(exc)
+                    print(f"collect: GDELT '{q}' failed ({exc})")
+                    break
     db.commit()
     print(f"collect: {counts['added']} new, {counts['dup']} duplicates merged, {counts['skipped']} off-topic skipped")
     return counts["added"]
@@ -634,17 +652,36 @@ FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
 STOOQ_CSV = "https://stooq.com/q/d/l/?s={symbol}&i=d"
 
 
-def fetch_csv(url, timeout=25):
+def fetch_csv(url, timeout=60):
     import csv
     import io
     import urllib.request
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (ore-steel-radar)"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        text = resp.read().decode("utf-8", "replace")
+    for attempt in (1, 2):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                text = resp.read().decode("utf-8", "replace")
+            break
+        except OSError:
+            if attempt == 2:
+                raise
+            time.sleep(10)
     rows = list(csv.reader(io.StringIO(text)))
     if len(rows) < 3 or not re.match(r"\d{4}-\d{2}-\d{2}", rows[1][0] if rows[1] else ""):
         raise ValueError("not a dated CSV")
     return rows
+
+
+def yahoo_closes(ticker):
+    """Daily closes for the last 6 months from Yahoo Finance's chart data (fallback when Stooq has no CSV)."""
+    data = json.loads(fetch_text(f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=6mo&interval=1d"))
+    res = data["chart"]["result"][0]
+    closes = res["indicators"]["quote"][0]["close"]
+    pts = [[dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat(), round(c, 4)]
+           for t, c in zip(res["timestamp"], closes) if c is not None]
+    if len(pts) < 2:
+        raise ValueError("no prices")
+    return pts[-130:]
 
 
 def pct(a, b):
@@ -676,10 +713,13 @@ def fetch_markets(cfg):
                 out["commodities"].append(old_c[c["id"]])
     for e in m.get("equities", []):
         try:
-            rows = fetch_csv(STOOQ_CSV.format(symbol=e["symbol"]))
-            head = [h.lower() for h in rows[0]]
-            ci = head.index("close")
-            pts = [[r[0], float(r[ci])] for r in rows[1:] if len(r) > ci and r[ci]][-130:]
+            try:
+                rows = fetch_csv(STOOQ_CSV.format(symbol=e["symbol"]))
+                head = [h.lower() for h in rows[0]]
+                ci = head.index("close")
+                pts = [[r[0], float(r[ci])] for r in rows[1:] if len(r) > ci and r[ci]][-130:]
+            except Exception:
+                pts = yahoo_closes(e["symbol"].split(".")[0].upper())
             last = pts[-1][1]
             out["equities"].append({**e, "points": pts, "latest": last, "date": pts[-1][0],
                                     "change_1m_pct": pct(last, pts[-22][1]) if len(pts) > 22 else None,

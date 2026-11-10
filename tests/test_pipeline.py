@@ -212,3 +212,26 @@ def test_gdelt_records(monkeypatch):
     monkeypatch.setattr(radar, "fetch_text", lambda url, timeout=30: json.dumps(payload))
     recs = list(radar.gdelt_records('"iron ore"'))
     assert recs[0]["published"] == "2026-11-02" and recs[0]["domain"] == "mining.com" and recs[0]["title"] == "Iron ore slips"
+
+
+def test_old_item_outside_dedupe_window_is_merged_not_crashing(tmp_path):
+    cfg = make_cfg(tmp_path)
+    db = radar.connect(str(tmp_path / "radar.db"))
+    radar.collect(cfg, db, [("test", FEED)])
+    db.execute("UPDATE items SET first_seen = '2026-01-01T00:00:00+00:00'")   # older than the 14-day window
+    db.commit()
+    # exact repeats of old headlines must not crash (UNIQUE) or be re-added; only the reworded copy is new
+    assert radar.collect(cfg, db, [("test", FEED)]) == 1
+    assert db.execute("SELECT COUNT(*) FROM items").fetchone()[0] == 4
+
+
+def test_equities_fall_back_to_yahoo(tmp_path, monkeypatch):
+    cfg = make_cfg(tmp_path)
+    monkeypatch.setattr(radar, "ROOT", tmp_path)
+    cfg["markets"] = {"commodities": [], "equities": [{"symbol": "vale.us", "name": "Vale"}]}
+    monkeypatch.setattr(radar, "fetch_csv", lambda url: (_ for _ in ()).throw(ValueError("not a dated CSV")))
+    ts = [1756684800 + 86400 * i for i in range(70)]
+    chart = {"chart": {"result": [{"timestamp": ts, "indicators": {"quote": [{"close": [10 + i * 0.1 for i in range(70)]}]}}]}}
+    monkeypatch.setattr(radar, "fetch_text", lambda url, timeout=30: json.dumps(chart) if "VALE" in url else "")
+    e = radar.fetch_markets(cfg)["equities"][0]
+    assert e["name"] == "Vale" and e["change_1m_pct"] is not None and e["change_3m_pct"] is not None

@@ -920,7 +920,6 @@ function renderAgenda(){
   document.getElementById("agenda").innerHTML = a.items.map(x => `<li style="--sev:var(--heat-${band(x.impact || 5)})"><div>
       <span class="t">${esc(x.title)}</span>
       <span class="fx">${esc(x.facts)}</span>
-      <span class="dc"><b>What matters</b>${esc(x.decision)}</span>
       <span class="tags"><span class="imp">${x.impact || ""}/10</span>${FOCUS[x.focus] ? `<span class="fchip">${esc(FOCUS[x.focus].name)}</span>` : ""}</span></div></li>`).join("");
   const box = (h, list, tag = "ul") => list && list.length ? `<div class="agbox"><h4>${h}</h4><${tag}>${list.map(t => `<li>${esc(t)}</li>`).join("")}</${tag}></div>` : "";
   const foot = box("Ask the team", a.questions, "ol") + box("Also worth a look", a.also) + (a.skip ? `<div class="agbox"><h4>Safe to skip</h4>${esc(a.skip)}</div>` : "");

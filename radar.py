@@ -701,13 +701,35 @@ def fetch_hormuz(cfg):
     return out
 
 
-def load_agenda():
-    """Optional analyst-written 'decisions this week' summary (data/agenda.json)."""
+def load_agenda(items=None, latest=None):
+    """'Decision on the table': the analyst-written agenda (data/agenda.json) when it is current; otherwise an
+    automatic one built from the strongest distinct signals of the last 3 days, so the section refreshes daily."""
     path = ROOT / "data" / "agenda.json"
     try:
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        agenda = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
     except ValueError:
-        return None
+        agenda = None
+    if items is None or not latest or (agenda and agenda.get("as_of", "") >= latest):
+        return agenda
+    since = (dt.date.fromisoformat(latest) - dt.timedelta(days=2)).isoformat()
+    pool = sorted([x for x in items if x["date"] >= since and x["impact"] >= 6 and x.get("action")],
+                  key=lambda x: (x.get("by") == "fallback", -x["impact"], -x["confidence"], x["verification"] != "verified"))
+    picked, seen = [], set()
+    for x in pool:
+        keys = {" ".join(x["what_happened"].lower().split()[:5]), "do:" + x["action"].strip().lower()}
+        if keys & seen:  # same story, or the same analysis told by another outlet
+            continue
+        seen |= keys
+        picked.append({"title": x["what_happened"], "focus": (x.get("focus") or [""])[0], "impact": x["impact"],
+                       "facts": x["so_what"], "decision": x["action"]})
+        if len(picked) == 6:
+            break
+    if not picked:
+        return agenda
+    start = (dt.date.fromisoformat(latest) - dt.timedelta(days=2)).strftime("%d %b")
+    return {"as_of": latest, "period": f"{start} – {dt.date.fromisoformat(latest).strftime('%d %b %Y')}",
+            "by": "automatic selection of the strongest signals (no analyst review yet today)", "items": picked,
+            "questions": (agenda or {}).get("questions", []), "also": [], "skip": (agenda or {}).get("skip", "")}
 
 
 def load_hormuz():
@@ -927,7 +949,7 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormu
             "focus_areas": {k: {"name": v["name"], "uses": v.get("uses", {}), "action": v.get("action", "")} for k, v in (cfg.get("focus_areas") or {}).items()},
             "focus_order": list((cfg.get("focus_areas") or {})), "pinned_hashtags": cfg.get("pinned_hashtags", []), "catalog": source_catalog(cfg), "areas": cfg["watch_areas"],
             "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets(),
-            "hormuz": hormuz if hormuz is not None else load_hormuz(), "agenda": load_agenda()}
+            "hormuz": hormuz if hormuz is not None else load_hormuz(), "agenda": load_agenda(items, latest)}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     html_path = out / "index.html"

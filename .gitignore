@@ -10,3 +10,5 @@ venv/
 
 # Local database (the GitHub Action force-adds its own copy)
 data/*.db
+pending.json
+analysed.json

@@ -89,7 +89,20 @@ a{color:var(--tail)}
 .t10 .src{display:block;font:11.5px var(--mono);color:var(--muted);margin-top:2px}
 .htag{font:600 11px var(--mono);color:var(--steel-mid)}
 @media (max-width:980px){.hero .inner{grid-template-columns:1fr}}
-.brief30{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;display:grid;gap:12px;max-width:640px}
+.agsub{margin:-6px 0 0;font:500 11px var(--mono);color:var(--faint)}
+.dlist{list-style:none;margin:0;padding:0;display:grid;gap:0;counter-reset:dl}
+.dlist li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.dlist li:first-child{border-top:0;padding-top:2px}
+.dlist li::before{counter-increment:dl;content:counter(dl,decimal-leading-zero);font:900 22px/1 var(--display);color:var(--sev,#c7cfd8)}
+.dlist .t{font-size:15px;line-height:1.32;font-weight:650;color:var(--ink)}
+.dlist .fx{display:block;font-size:13px;line-height:1.4;color:var(--muted);margin-top:3px}
+.dlist .dc{display:block;font-size:13.5px;line-height:1.4;color:#2c3744;margin-top:5px}
+.dlist .dc b{font:800 11.5px var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--steel);margin-right:5px}
+.dlist .tags{display:flex;gap:6px;align-items:center;margin-top:5px}
+.dlist .imp{font:700 11px var(--mono);color:#fff;background:var(--sev);border-radius:6px;padding:1px 6px}
+.agmore summary{cursor:pointer;font:800 12.5px var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--steel)}
+.agmore .agbox{margin-top:8px}
+.brief30{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;display:grid;gap:12px;max-width:680px}
 .pulse{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .pv{border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff;min-width:0}
 .pv b{display:block;font:800 24px/1 var(--display);color:var(--steel);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -346,8 +359,10 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
       </div>
       <div class="brief30" id="brief30" aria-label="The brief in 30 seconds">
         <div class="pulse" id="pulse"></div>
-        <h2 class="b30h">The brief in 30 seconds</h2>
-        <ol class="b30" id="b30"></ol>
+        <h2 class="b30h">Decision on the table</h2>
+        <p class="agsub" id="agSub"></p>
+        <ol class="dlist" id="agenda"></ol>
+        <details class="agmore" id="agmore" hidden><summary>Ask the team · also worth a look</summary><div id="agfoot"></div></details>
       </div>
       <p class="note" id="note" hidden></p>
     </div>
@@ -361,13 +376,6 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 </section>
 
 <main>
-  <section class="section gutter" id="agendaSec" hidden><div class="inner">
-    <h2>Decision on the table</h2>
-    <p class="sub" id="agSub"></p>
-    <p class="why"><b>Why it matters for us</b>The few developments this period that need a leadership decision, the facts behind each, and what to ask the team.</p>
-    <div class="agenda" id="agenda"></div>
-    <div class="agfoot" id="agfoot"></div>
-  </div></section>
   <section class="section gutter"><div class="inner">
     <h2>Your briefing</h2>
     <p class="sub">Pick a function to filter every call, chart and signal on this page.</p>
@@ -903,31 +911,20 @@ function renderBrief30(){
   if (h.pct_of_baseline != null) tiles.push([h.pct_of_baseline < 50 ? "alert" : "", `${h.pct_of_baseline}%`, "Hormuz vs normal"]);
   tiles.push([p.some(x => x.impact >= 8) ? "alert" : "", p.filter(x => x.impact >= 7).length, "High-impact signals"]);
   document.getElementById("pulse").innerHTML = tiles.map(([c, v, l]) => `<div class="pv ${c}"><b>${v}</b><span>${l}</span></div>`).join("");
-  const used = new Set();
-  const rows = Object.keys(DATA.functions).map(f => {
-    const top = p.filter(x => x.leaders.includes(f) && !used.has(x.what_happened))
-      .sort((a, b) => b.impact - a.impact || b.confidence - a.confidence || (b.date > a.date ? 1 : -1))[0];
-    if (!top) return "";
-    used.add(top.what_happened);
-    return `<li data-l="${f}"><span class="fn">${esc(DATA.functions[f].name)}</span><span class="hd"><b>${top.impact}</b>${esc(top.what_happened)}${top.action ? `<span class="ac">→ ${esc(top.action)}</span>` : ""}</span></li>`;
-  }).join("");
-  document.getElementById("b30").innerHTML = rows || `<li><span class="fn">—</span><span>No signals in this period.</span></li>`;
-  document.querySelectorAll("#b30 li[data-l]").forEach(li => li.onclick = () => {
-    state.leader = li.dataset.l; renderAll(); document.getElementById("leaders").scrollIntoView({behavior:"smooth", block:"start"});
-  });
 }
 function renderAgenda(){
   const a = DATA.agenda;
-  if (!a || !(a.items || []).length) return;
-  document.getElementById("agendaSec").hidden = false;
+  if (!a || !(a.items || []).length) { document.getElementById("agenda").innerHTML = `<li><span class="t">No decisions flagged yet.</span></li>`; return; }
   const stale = a.as_of && a.as_of < addDays(DATA.latest, -7);
-  document.getElementById("agSub").textContent = `${a.period || ""} · reviewed ${fmt(a.as_of, true)}${a.by ? " by " + a.by : ""}${stale ? " · older than a week, check the signals below for newer news" : ""}`;
-  document.getElementById("agenda").innerHTML = a.items.map((x, i) => `<article class="ag pop" style="--d:${i * 70}ms;--sev:var(--heat-${band(x.impact || 5)})">
-      <div class="meta">${gauge(x.impact || 5, 40)}${FOCUS[x.focus] ? `<span class="fchip">${esc(FOCUS[x.focus].name)}</span>` : ""}</div>
-      <h3>${esc(x.title)}</h3><p>${esc(x.facts)}</p>
-      <div class="dec"><b>Decision</b>${esc(x.decision)}</div></article>`).join("");
+  document.getElementById("agSub").textContent = `${a.period || ""} · ${a.by && a.by.startsWith("Claude") ? "analyst-reviewed" : "automatic"} ${fmt(a.as_of, true)}${stale ? " · over a week old" : ""}`;
+  document.getElementById("agenda").innerHTML = a.items.map(x => `<li style="--sev:var(--heat-${band(x.impact || 5)})"><div>
+      <span class="t">${esc(x.title)}</span>
+      <span class="fx">${esc(x.facts)}</span>
+      <span class="dc"><b>Decision</b>${esc(x.decision)}</span>
+      <span class="tags"><span class="imp">${x.impact || ""}/10</span>${FOCUS[x.focus] ? `<span class="fchip">${esc(FOCUS[x.focus].name)}</span>` : ""}</span></div></li>`).join("");
   const box = (h, list, tag = "ul") => list && list.length ? `<div class="agbox"><h4>${h}</h4><${tag}>${list.map(t => `<li>${esc(t)}</li>`).join("")}</${tag}></div>` : "";
-  document.getElementById("agfoot").innerHTML = box("Ask the team", a.questions, "ol") + box("Also worth a look", a.also) + (a.skip ? `<div class="agbox"><h4>Safe to skip</h4>${esc(a.skip)}</div>` : "");
+  const foot = box("Ask the team", a.questions, "ol") + box("Also worth a look", a.also) + (a.skip ? `<div class="agbox"><h4>Safe to skip</h4>${esc(a.skip)}</div>` : "");
+  if (foot) { document.getElementById("agfoot").innerHTML = foot; document.getElementById("agmore").hidden = false; }
 }
 renderAgenda();
 function renderAll(){ renderBrief30(); renderCompbar(); renderLeaders(); renderChain(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }

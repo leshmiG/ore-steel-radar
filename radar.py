@@ -935,7 +935,7 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormu
         if not top:
             lines.append("- Nothing above the impact threshold.")
         for x in top:
-            lines.append(f"- **[{x['impact']}/10 {x['signal']}] {x['what_happened']}** {x['so_what']}"
+            lines.append(f"- **[{x['impact']}/10] {x['what_happened']}** {x['so_what']}"
                          + (f" *Action:* {x['action']}" if x["action"] else "") + f" ([{x['source']}]({x['link']}))")
         lines.append("")
     md_path = out / "brief.md"

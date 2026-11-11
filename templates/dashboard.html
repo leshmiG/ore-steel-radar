@@ -94,7 +94,7 @@ h1{font:900 clamp(44px,7vw,88px)/.92 var(--display);letter-spacing:.005em;text-t
 h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%,#aeb7c1 52%,#4b5866 70%,#1f2933 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
 @media (prefers-reduced-motion:no-preference){h1 em{animation:sheen 6s ease-in-out infinite}}
 @keyframes sheen{0%,100%{background-position:0 0}50%{background-position:100% 0}}
-.lede{max-width:58ch;color:var(--muted);font-size:17px;margin:0}
+.lede{max-width:80ch;color:var(--muted);font-size:17px;margin:0}
 .lede strong{color:var(--ink);font-weight:600}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .kpi{background:rgba(255,255,255,.93);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
@@ -313,9 +313,7 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
       <div>
         <div class="eyebrow">Iron ore · Pellets · DRI · Steel · Strait of Hormuz · Worldwide</div>
         <h1>What moved <em>ore &amp; steel</em> <span id="when">this week</span></h1>
-        <p class="lede" id="lede"></p>
       </div>
-      <div class="kpis" id="kpis"></div>
       <p class="note" id="note" hidden></p>
     </div>
     <aside class="top10" aria-label="Top 10 news by hashtag">
@@ -360,6 +358,11 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
       <article class="panel wide" id="p-regions"><header><div><h3>Where it's happening</h3><p class="insight" id="i-regions"></p></div><button class="tbtn" data-t="regions">Table</button></header><div class="canvas-box" style="height:260px"><canvas id="c-regions" role="img" aria-label="Signals by region"></canvas></div><div class="tablewrap" hidden id="t-regions"></div></article>
     </div>
   </div></section>
+  <section class="section gutter" style="padding-top:8px"><div class="inner">
+    <h2>At a glance</h2>
+    <p class="lede" id="lede"></p>
+    <div class="kpis" id="kpis" style="margin-top:16px"></div>
+  </div></section>
   <section class="section gutter" id="hormuzSec" hidden><div class="inner">
     <h2>Strait of Hormuz watch</h2>
     <p class="sub">Daily vessel transits, ships holding offshore, war-risk insurance and the latest incidents.</p>
@@ -394,9 +397,6 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
       <select id="fTag" aria-label="Hashtag"></select>
       <select id="fVer" aria-label="Verification">
         <option value="All">All signals</option><option value="verified">Verified only</option><option value="credible">Hide unconfirmed</option>
-      </select>
-      <select id="fSignal" aria-label="Tailwind or headwind">
-        <option value="All">Tailwinds and headwinds</option><option value="tailwind">Tailwinds only</option><option value="headwind">Headwinds only</option><option value="neutral">Neutral only</option>
       </select>
       <input id="fQ" type="search" placeholder="Search a company, country or topic" aria-label="Search">
     </div>
@@ -515,20 +515,19 @@ if (DATA.note) { const n = document.getElementById("note"); n.textContent = DATA
 
 function renderTicker(){
   const top = [...pool()].sort((a, b) => b.impact - a.impact).slice(0, 10);
-  const html = top.map(x => `<span class="tick"><b style="color:var(--heat-${band(x.impact)})">${x.impact}</b><span style="color:var(--${x.signal === "tailwind" ? "tail" : x.signal === "headwind" ? "head" : "neutral"})">${SIG[x.signal].icon}</span><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.what_happened)}</a></span>`).join("");
+  const html = top.map(x => `<span class="tick"><b style="color:var(--heat-${band(x.impact)})">${x.impact}</b><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.what_happened)}</a></span>`).join("");
   document.getElementById("ticker").innerHTML = top.length ? html + html : `<span class="tick">No signals in this period.</span>`;
 }
 
 function renderHero(){
   const p = pool();
-  const high = p.filter(x => x.impact >= 7).length, tw = p.filter(x => x.signal === "tailwind").length, hw = p.filter(x => x.signal === "headwind").length;
+  const high = p.filter(x => x.impact >= 7).length;
   const scanned = DAYS.filter(d => d >= state.from && d <= state.to).reduce((s, d) => s + (SCANNED[d] || 0), 0);
   const cos = new Set(p.flatMap(x => x.companies)).size;
-  const balance = hw > tw ? `headwinds outnumber tailwinds <strong>${hw} to ${tw}</strong>` : tw > hw ? `tailwinds outnumber headwinds <strong>${tw} to ${hw}</strong>` : `tailwinds and headwinds are level at <strong>${tw} each</strong>`;
   const coNames = [...SEL];
   const who = (state.leader === "All" ? "" : ` for <strong>${esc(DATA.functions[state.leader].name)}</strong>`) + (coNames.length ? ` on <strong>${esc(coNames.slice(0, 3).join(", "))}${coNames.length > 3 ? ` +${coNames.length - 3}` : ""}</strong>` : "");
   document.getElementById("lede").innerHTML = p.length
-    ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${high}</strong> ${high === 1 ? "is" : "are"} high impact (7+) and ${balance}.`
+    ? `<strong>${p.length} signals</strong>${who}${scanned ? ` from ${scanned} headlines` : ""}. <strong>${high}</strong> ${high === 1 ? "is" : "are"} high impact (7+).`
     : `No signals${who} in this period. Try a longer period or another leader.`;
   const ver = p.filter(x => x.verification === "verified").length;
   const outlets = new Set(p.flatMap(x => (x.sources || []).map(o => o.domain || o.name))).size;
@@ -599,11 +598,11 @@ function renderChain(){
   document.getElementById("chain").innerHTML = FOCUS_ORDER.map(k => {
     const a = FOCUS[k], list = inP.filter(x => (x.focus || []).includes(k));
     const top = [...list].sort((p, q) => q.impact - p.impact || q.confidence - p.confidence)[0];
-    const tw = list.filter(x => x.signal === "tailwind").length, hw = list.filter(x => x.signal === "headwind").length;
+    const hi = list.filter(x => x.impact >= 7).length;
     const use = fn ? (a.uses || {})[fn] : (top && top.action) || a.action;
     return `<button class="link${list.length ? "" : " zero"}" aria-pressed="${state.focus === k}" data-f="${k}">
       <span class="lt"><b>${esc(a.name)}</b><span class="n">${list.length}</span></span>
-      <span class="bal"><span class="tw">▲ ${tw} tailwind</span><span class="hw">▼ ${hw} headwind</span></span>
+      <span class="bal">${hi} high impact (7+)</span>
       <span class="top">${top ? `<strong>${top.impact}/10</strong> ${esc(top.what_happened)}` : "Nothing in this period."}</span>
       <span class="use"><em>${fn ? "How we use it" : "Do"}</em>${esc(use || "")}</span></button>`;
   }).join("");
@@ -630,7 +629,7 @@ function renderTop3(){
   const top = [...pool()].sort((a, b) => b.impact - a.impact || b.confidence - a.confidence).slice(0, 3);
   document.getElementById("top3").innerHTML = top.length ? top.map((x, i) => `<article class="call pop" style="--d:${i * 90}ms;--sev:var(--heat-${band(x.impact)})">
       <span class="rank">0${i + 1}</span>
-      <div class="meta">${gauge(x.impact, 44)}${verChip(x)}${sigChip(x.signal)}${focusChips(x)}</div>
+      <div class="meta">${gauge(x.impact, 44)}${verChip(x)}${focusChips(x)}</div>
       <h3>${esc(x.what_happened)}</h3>
       <dl class="kv"><dt>Impact on us</dt><dd>${esc(x.so_what)}</dd></dl>
       ${x.action ? `<dl class="kv"><dt>How to use it</dt><dd>${esc(x.action)}</dd></dl>` : ""}
@@ -700,7 +699,7 @@ function fillTagSelect(){
   const tags = [...new Set(ALL.flatMap(x => x.tags || []))].sort();
   fillSelect("fTag", "All hashtags", tags); sel.value = tags.includes(cur) ? cur : "All"; state.ftag = sel.value;
 }
-[["fArea", "area"], ["fRegion", "region"], ["fSignal", "signal"], ["fVer", "ver"], ["fTag", "ftag"]].forEach(([id, k]) => document.getElementById(id).onchange = e => { state[k] = e.target.value; renderFeed(); });
+[["fArea", "area"], ["fRegion", "region"], ["fVer", "ver"], ["fTag", "ftag"]].forEach(([id, k]) => document.getElementById(id).onchange = e => { state[k] = e.target.value; renderFeed(); });
 document.getElementById("fImp").onchange = e => { state.imp = Number(e.target.value); renderFeed(); };
 document.getElementById("fQ").oninput = e => { state.q = e.target.value.toLowerCase(); renderFeed(); };
 
@@ -708,7 +707,6 @@ function renderFeed(){
   const base = pool();
   const list = base.filter(x => (state.area === "All" || x.watch_area === state.area) && (state.region === "All" || x.region === state.region) &&
     x.impact >= state.imp && (state.ftag === "All" || (x.tags || []).includes(state.ftag)) &&
-    (state.signal === "All" || x.signal === state.signal) &&
     (state.ver === "All" || (state.ver === "verified" ? x.verification === "verified" : x.verification !== "unconfirmed")) &&
     (!state.q || [x.title, x.what_happened, x.so_what, x.companies.join(" "), x.countries.join(" "), x.region, x.watch_area].join(" ").toLowerCase().includes(state.q)))
     .sort((a, b) => b.impact - a.impact || (b.date > a.date ? 1 : -1));
@@ -718,7 +716,7 @@ function renderFeed(){
   feed.innerHTML = list.map((x, i) => `<article class="card pop" style="--d:${Math.min(i, 10) * 45}ms;--sev:var(--heat-${band(x.impact)})">
     <div class="gauge">${gauge(x.impact)}<span>Impact</span></div>
     <div class="cbody">
-      <div class="meta">${x.first_seen === DATA.today ? `<span class="new">NEW</span>` : ""}${verChip(x)}${sigChip(x.signal)}${checkChips(x)}${focusChips(x)}<span class="chip">${esc(x.watch_area)}</span><span>${esc(x.event_type)}</span><span>${esc(x.region)}</span>${x.companies.length ? `<span>${esc(x.companies.join(", "))}</span>` : ""}</div>
+      <div class="meta">${x.first_seen === DATA.today ? `<span class="new">NEW</span>` : ""}${verChip(x)}${checkChips(x)}${focusChips(x)}<span class="chip">${esc(x.watch_area)}</span><span>${esc(x.event_type)}</span><span>${esc(x.region)}</span>${x.companies.length ? `<span>${esc(x.companies.join(", "))}</span>` : ""}</div>
       <p class="what">${esc(x.what_happened)}</p>
       <dl class="kv"><dt>Impact on us</dt><dd>${esc(x.so_what)}</dd></dl>
       ${x.action ? `<dl class="kv"><dt>How to use it</dt><dd>${esc(x.action)}</dd></dl>` : ""}

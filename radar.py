@@ -701,6 +701,15 @@ def fetch_hormuz(cfg):
     return out
 
 
+def load_agenda():
+    """Optional analyst-written 'decisions this week' summary (data/agenda.json)."""
+    path = ROOT / "data" / "agenda.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    except ValueError:
+        return None
+
+
 def load_hormuz():
     path = ROOT / "data" / "hormuz.json"
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
@@ -918,7 +927,7 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormu
             "focus_areas": {k: {"name": v["name"], "uses": v.get("uses", {}), "action": v.get("action", "")} for k, v in (cfg.get("focus_areas") or {}).items()},
             "focus_order": list((cfg.get("focus_areas") or {})), "pinned_hashtags": cfg.get("pinned_hashtags", []), "catalog": source_catalog(cfg), "areas": cfg["watch_areas"],
             "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets(),
-            "hormuz": hormuz if hormuz is not None else load_hormuz()}
+            "hormuz": hormuz if hormuz is not None else load_hormuz(), "agenda": load_agenda()}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
     html_path = out / "index.html"

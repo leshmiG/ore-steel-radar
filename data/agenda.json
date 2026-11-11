@@ -1,0 +1,35 @@
+{
+  "as_of": "2026-11-11",
+  "period": "5–11 Nov 2026",
+  "by": "Claude (analyst review)",
+  "items": [
+    {"title": "Hormuz is the biggest risk to the business", "focus": "IRON_ORE", "impact": 9,
+     "facts": "Traffic is about 5% of normal (around 4 ships a day vs 85), tankers were attacked again this week and war-risk insurance is about 32 times normal. Every ore cargo in and every pellet or steel cargo out through the strait is exposed.",
+     "decision": "Approve extra ore stock and pre-booked Q1 freight and insurance; ask for a plan B route (ports outside the strait, the GCC railway)."},
+    {"title": "Saudi Arabia is investigating section imports", "focus": "HSM", "impact": 9,
+     "facts": "Saudi Arabia opened an anti-dumping investigation into hot-rolled sections from China and Türkiye. If duties follow, our main competitors in our biggest regional market become more expensive. EMSTEEL is already supplying sections to energy projects.",
+     "decision": "Support the case with data and get sales ready to grow Saudi section volumes."},
+    {"title": "Gas is now a strategic risk, not just a cost", "focus": "DRP", "impact": 8,
+     "facts": "Egypt cut gas to its steel mills (Ezz Steel lost 30%) and Italian mills stopped on energy costs. Our DRP and meltshop depend on gas in the same way.",
+     "decision": "Review how secure our gas contract is; meanwhile offer billets, sections or HBI into Egypt and southern Europe."},
+    {"title": "Pellet supply is tight while iron ore is cheap", "focus": "PELLETS", "impact": 8,
+     "facts": "Ferrexpo has stopped pellet production in Ukraine, supporting European pellet premiums. Iron ore is near a 2-year low (about $91) and Simandou has started producing.",
+     "decision": "Lock in ore purchases at today's low prices and offer pellets to the European buyers Ferrexpo supplied."},
+    {"title": "Green-steel demand in Europe is slower but coming", "focus": "DRP", "impact": 7,
+     "facts": "thyssenkrupp's DRI plant slipped to 2029, POSCO's new EAF runs at 10% of capacity, and EU carbon border (CBAM) costs are rising for Indian exporters.",
+     "decision": "Use the extra time to sign DR-pellet supply deals early and prepare product carbon footprints; our gas-DRI route is an advantage under CBAM."},
+    {"title": "Europe is closing its steel market (to confirm)", "focus": "STEEL_MARKET", "impact": 7,
+     "facts": "A report says out-of-quota EU tariffs rise to 50%, which could cut imports by 47%. Flagged by keyword rules only, not yet reviewed.",
+     "decision": "Ask the team to confirm before acting on it."}
+  ],
+  "also": [
+    "Deadly crane-and-furnace blast at Habaş, Türkiye: run a quick safety check of our meltshop cranes.",
+    "Chinese steel exports are down 2.3% this year but expected to rebound: watch Chinese sections coming into the GCC."
+  ],
+  "questions": [
+    "How many weeks of ore stock do we hold, and what is the plan if Hormuz stays shut?",
+    "What would duties on Chinese and Turkish sections in Saudi Arabia be worth to us, and are we supporting the investigation?",
+    "How exposed are we if our gas supply is cut by 30%, like Egypt's?"
+  ],
+  "skip": "Daily Chinese price points, mining company results, and copper, gold and lithium news."
+}

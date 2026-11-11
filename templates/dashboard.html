@@ -106,6 +106,19 @@ a{color:var(--tail)}
 .b30 .ac{display:block;color:var(--muted);font-weight:400;margin-top:2px}
 .b30 li:hover .hd{text-decoration:underline}
 @media (max-width:560px){.pulse{grid-template-columns:repeat(2,minmax(0,1fr))}.b30 li{grid-template-columns:1fr;gap:2px}}
+.agenda{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px;counter-reset:ag}
+.ag{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;display:flex;flex-direction:column;gap:9px;position:relative;border-top:3px solid var(--sev)}
+.ag h3{margin:0;font-size:17px;line-height:1.3;font-weight:650;padding-right:40px}
+.ag h3::before{counter-increment:ag;content:counter(ag);position:absolute;right:16px;top:12px;font:900 34px/1 var(--display);color:#e3e8ee}
+.ag .meta{display:flex;gap:8px;align-items:center}
+.ag p{margin:0;font-size:14px;line-height:1.45;color:#2c3744}
+.ag .dec{margin-top:auto;padding-top:9px;border-top:1px dashed var(--line-2);font-size:14px;color:var(--ink)}
+.ag .dec b{font:800 12.5px var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--steel);margin-right:6px}
+.agfoot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+.agbox{background:#eef3f8;border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.45;color:#2c3744}
+.agbox h4{margin:0 0 6px;font:800 13px var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--steel)}
+.agbox ol,.agbox ul{margin:0;padding-left:18px;display:grid;gap:4px}
+@media (max-width:980px){.agenda,.agfoot{grid-template-columns:1fr}}
 .eyebrow{font:600 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--steel-mid)}
 h1{font:900 clamp(44px,7vw,88px)/.92 var(--display);letter-spacing:.005em;text-transform:uppercase;margin:10px 0 14px;max-width:14ch;text-wrap:balance;color:var(--steel)}
 h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%,#aeb7c1 52%,#4b5866 70%,#1f2933 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -348,6 +361,13 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
 </section>
 
 <main>
+  <section class="section gutter" id="agendaSec" hidden><div class="inner">
+    <h2>Decisions on the table</h2>
+    <p class="sub" id="agSub"></p>
+    <p class="why"><b>Why it matters for us</b>The few developments this period that need a leadership decision, the facts behind each, and what to ask the team.</p>
+    <div class="agenda" id="agenda"></div>
+    <div class="agfoot" id="agfoot"></div>
+  </div></section>
   <section class="section gutter"><div class="inner">
     <h2>Your briefing</h2>
     <p class="sub">Pick a function to filter every call, chart and signal on this page.</p>
@@ -896,6 +916,20 @@ function renderBrief30(){
     state.leader = li.dataset.l; renderAll(); document.getElementById("leaders").scrollIntoView({behavior:"smooth", block:"start"});
   });
 }
+function renderAgenda(){
+  const a = DATA.agenda;
+  if (!a || !(a.items || []).length) return;
+  document.getElementById("agendaSec").hidden = false;
+  const stale = a.as_of && a.as_of < addDays(DATA.latest, -7);
+  document.getElementById("agSub").textContent = `${a.period || ""} · reviewed ${fmt(a.as_of, true)}${a.by ? " by " + a.by : ""}${stale ? " · older than a week, check the signals below for newer news" : ""}`;
+  document.getElementById("agenda").innerHTML = a.items.map((x, i) => `<article class="ag pop" style="--d:${i * 70}ms;--sev:var(--heat-${band(x.impact || 5)})">
+      <div class="meta">${gauge(x.impact || 5, 40)}${FOCUS[x.focus] ? `<span class="fchip">${esc(FOCUS[x.focus].name)}</span>` : ""}</div>
+      <h3>${esc(x.title)}</h3><p>${esc(x.facts)}</p>
+      <div class="dec"><b>Decision</b>${esc(x.decision)}</div></article>`).join("");
+  const box = (h, list, tag = "ul") => list && list.length ? `<div class="agbox"><h4>${h}</h4><${tag}>${list.map(t => `<li>${esc(t)}</li>`).join("")}</${tag}></div>` : "";
+  document.getElementById("agfoot").innerHTML = box("Ask the team", a.questions, "ol") + box("Also worth a look", a.also) + (a.skip ? `<div class="agbox"><h4>Safe to skip</h4>${esc(a.skip)}</div>` : "");
+}
+renderAgenda();
 function renderAll(){ renderBrief30(); renderCompbar(); renderLeaders(); renderChain(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
 
 if (window.Chart) {

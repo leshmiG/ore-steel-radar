@@ -9,17 +9,102 @@ perspective: >
   electric arc furnace steelmaking, and sells pellets and steel into the GCC, MENA,
   India, Europe and Asia.
 
-# Dashboard tabs: every signal is routed to the functions whose decisions it could change
+# Dashboard tabs: every signal is routed to the functions whose decisions it could change.
+# Each function looks at the same core value chain (focus_areas below) through its own lens.
 functions:
-  GOV: {name: "Governance & Strategy", remit: "Strategy, capacity, M&A, partnerships, market entry, policy, CBAM and ESG"}
-  FIN: {name: "Finance & Risk", remit: "Prices, margins, costs, FX, capex, financing, peer results, market and geopolitical risk"}
-  SCM: {name: "Supply Chain", remit: "Iron ore and raw materials, freight, ports, shipping routes incl. the Strait of Hormuz, suppliers, customers' deliveries"}
-  INN: {name: "Innovation & Research", remit: "Pelletizing and steelmaking process, DRI and hydrogen, green steel, digital and AI, research and patents"}
+  GOV: {name: "Governance & Strategy", remit: "Capacity, M&A, partnerships, new DRP, meltshop and mill projects, market entry, policy, CBAM and ESG across iron ore, pellets, DRI and steel"}
+  FIN: {name: "Finance & Risk", remit: "Iron ore, pellet premium, DRI/HBI, scrap and steel prices, margins, energy costs, capex, financing, peer results, tariffs and geopolitical risk"}
+  SCM: {name: "Supply Chain", remit: "Ore and concentrate supply, pellet and DRI flows, freight, ports, Hormuz, gas, electrodes, refractories and customers' deliveries"}
+  INN: {name: "Innovation & Research", remit: "Pelletizing, DRP/DRI (hydrogen, MIDREX, ENERGIRON), meltshop/EAF, CCM and rolling technology, green steel, digital and AI"}
+
+# The core value chain every signal is mapped to (first match wins, most specific first in `order`).
+# `uses` says how a pelletizing and steel company can use news in that area, per function.
+focus_order: [CCM, HSM, MELTSHOP, DRP, PELLETIZING, PELLETS, IRON_ORE, STEEL_MARKET]
+focus_areas:
+  IRON_ORE:
+    name: "Iron ore"
+    words: ["iron ore", "iron-ore", "ore fines", "concentrate", "lump ore", "iodex", "simandou", "pilbara", "carajas", "ore mine", "ore output", "ore shipments", "magnetite", "hematite", "beneficiation", "62% fe", "65% fe", "67% fe"]
+    uses:
+      GOV: "Shapes long-term ore sourcing: diversify suppliers, consider equity or offtake stakes in new DR-grade sources."
+      FIN: "Moves our biggest input cost; time purchases, review index-linked contracts and hedge exposure."
+      SCM: "Signals changes in concentrate availability and quality; adjust nominations, stock cover and blends."
+      INN: "Ore quality trends decide future pellet chemistry; test lower-grade or new concentrates early."
+    action: "Check impact on our ore purchase plan and contract pricing."
+  PELLETS:
+    name: "Iron pellets"
+    words: ["pellet", "pellets", "dr-grade", "dr grade", "bf-grade", "blast furnace grade", "pellet premium", "pellet price", "direct reduction grade"]
+    uses:
+      GOV: "Tells us where pellet competition and demand are heading; adjust market focus and capacity plans."
+      FIN: "Pellet premium and price moves feed straight into our revenue; revisit pricing and sales timing."
+      SCM: "New pellet flows change who we compete with in each port; protect key customers' supply."
+      INN: "Peers' pellet quality and product changes set the bar our DR-grade specs must meet."
+    action: "Compare with our pellet pricing, customers and competitors' offers."
+  PELLETIZING:
+    name: "Pelletizing"
+    words: ["pelletiz", "pelletis", "induration", "grate kiln", "grate-kiln", "travelling grate", "traveling grate", "bentonite", "binder", "balling", "pelletizing plant", "pellet plant"]
+    uses:
+      GOV: "New pellet plants and expansions change regional supply; benchmark our capacity strategy."
+      FIN: "Plant capex, energy and binder costs benchmark our own cost per tonne."
+      SCM: "Binder, bentonite and fuel supply changes affect our plant availability."
+      INN: "Process improvements (induration, binders, energy saving) we could trial in our plants."
+    action: "Share with operations to benchmark our pelletizing process and costs."
+  DRP:
+    name: "DRP / DRI"
+    words: ["dri", "direct reduc", "direct-reduc", "hbi", "hot briquett", "sponge iron", "midrex", "energiron", "hyl", "direct reduction plant", "drp", "reduction plant", "hydrogen-based", "hydrogen dri", "green hydrogen"]
+    uses:
+      GOV: "New DRI/HBI projects decide future DR-pellet demand; target partnerships and offtakes early."
+      FIN: "DRI/HBI prices and gas costs drive our metallics margin; review gas and product pricing."
+      SCM: "Gas, DR-pellet and HBI flow changes affect our feed security and export routes."
+      INN: "Hydrogen and DRP technology shifts show where our pellets and plants must evolve."
+    action: "Assess effect on DR-pellet demand and our DRP operations."
+  MELTSHOP:
+    name: "Meltshop"
+    words: ["meltshop", "melt shop", "electric arc furnace", "arc furnace", "eaf", "ladle furnace", "steelmaking", "steel making", "steel-making", "bof", "basic oxygen", "converter", "scrap", "graphite electrode", "electrode", "refractor", "ferroalloy", "ferro alloy"]
+    uses:
+      GOV: "EAF and meltshop investments by peers shift regional steel capacity; review our positioning."
+      FIN: "Scrap, electrode, power and alloy costs move our cost per tonne of liquid steel."
+      SCM: "Scrap, electrode, refractory and alloy supply risks for our meltshop."
+      INN: "EAF efficiency, charge-mix and low-carbon practices we can benchmark or adopt."
+    action: "Check meltshop cost and charge-mix impact with operations."
+  CCM:
+    name: "CCM / casting"
+    words: ["continuous cast", "continuous-cast", "caster", "ccm", "billet", "billets", "bloom", "blooms", "slab", "slabs", "beam blank", "semi-finished", "semis"]
+    uses:
+      GOV: "Semi-finished capacity and trade changes shift where billets and blooms come from."
+      FIN: "Billet and slab prices set the spread between our liquid steel and semis."
+      SCM: "Semis import/export shifts affect our sales and the mills that buy from us."
+      INN: "Caster upgrades and quality technology we can benchmark."
+    action: "Compare with our billet/bloom prices and caster output plans."
+  HSM:
+    name: "Heavy section mill"
+    words: ["heavy section", "section mill", "sections", "structural steel", "beam", "beams", "h-beam", "i-beam", "rolling mill", "rail", "rails", "merchant bar", "sheet pile", "angles", "channels", "long products", "long steel"]
+    uses:
+      GOV: "Construction and infrastructure projects decide demand for our heavy sections."
+      FIN: "Section and long-product prices drive our finished-product margin."
+      SCM: "Competing section imports and project schedules affect our order book and deliveries."
+      INN: "Rolling and product innovations (lighter, stronger sections) to consider."
+    action: "Check effect on our section order book and pricing."
+  STEEL_MARKET:
+    name: "Steel market"
+    words: ["steel price", "steel prices", "rebar", "wire rod", "plate prices", "strip prices", "pipe prices", "plate price", "pipe", "plate", "strip", "hrc", "hot rolled", "hot-rolled", "coil", "steel demand", "steel output", "steel production", "steel export", "steel import", "steel market", "crude steel", "tariff", "safeguard", "anti-dumping", "cbam", "construction", "steel"]
+    uses:
+      GOV: "Market and policy shifts (tariffs, CBAM, demand) shape where we sell and invest."
+      FIN: "Steel prices and trade measures move our margins and export competitiveness."
+      SCM: "Trade-flow changes affect our export routes, customers and timing."
+      INN: "Low-carbon and product trends show what customers will ask for next."
+    action: "Review impact on our sales plan and export markets."
+
+# Keyword rules that route a signal to a function (added to the AI's own choice)
+function_rules:
+  GOV: ["capacity", "expansion", "expand", "acqui", "merger", "joint venture", "partnership", "mou", "agreement", "new plant", "invest", "project", "policy", "regulat", "cbam", "tariff", "safeguard", "anti-dumping", "sanction", "government", "ministry", "esg", "emission", "decarbon", "strategy", "ceo", "stake", "deal"]
+  FIN: ["price", "premium", "cost", "margin", "profit", "loss", "earnings", "results", "revenue", "capex", "financ", "loan", "bond", "ipo", "shares", "stock market", "currency", "futures", "index", "forecast", "outlook", "insurance", "dividend", "tariff", "duty", "$"]
+  SCM: ["shipment", "export", "import", "freight", "vessel", "port", "shipping", "capesize", "supply", "contract", "offtake", "inventor", "stockpile", "output", "production", "strike", "outage", "disruption", "hormuz", "logistic", "gas supply", "scrap", "electrode", "refractor", "delivery", "rail", "route"]
+  INN: ["technolog", "hydrogen", "pilot", "research", "patent", "process", "digital", " ai ", "artificial intelligence", "automation", "green steel", "low-carbon", "low carbon", "electrolys", "carbon capture", "efficiency", "startup", "trial", "innovation", "university", "midrex", "energiron"]
 
 # Hashtags the AI tags each signal with (it may add a new one when a theme is clearly emerging)
 hashtags: ["#IronOre", "#Pellets", "#DRGradePellets", "#DRI", "#HBI", "#Steel", "#SteelPrices", "#GreenSteel", "#HydrogenDRI",
   "#EAF", "#Scrap", "#CokingCoal", "#ChinaSteel", "#IndiaSteel", "#GCCSteel", "#StraitOfHormuz", "#Shipping", "#Freight",
-  "#CBAM", "#Tariffs", "#Simandou", "#Mining", "#Earnings", "#Capacity", "#Energy", "#Geopolitics"]
+  "#CBAM", "#Tariffs", "#Meltshop", "#CCM", "#HeavySections", "#Billets", "#Simandou", "#Mining", "#Earnings", "#Capacity", "#Energy", "#Geopolitics"]
 pinned_hashtags: ["#StraitOfHormuz"]   # always shown in the Top 10 panel
 
 watch_areas:
@@ -58,6 +143,15 @@ topics:
   - direct reduced iron
   - hot briquetted iron
   - pelletizing plant
+  - iron ore pelletizing
+  - direct reduction plant
+  - DRI plant
+  - meltshop steel
+  - continuous casting machine steel
+  - billet caster
+  - heavy section mill
+  - structural steel sections price
+  - steel market outlook
   - hydrogen DRI
   - green steel
   - electric arc furnace

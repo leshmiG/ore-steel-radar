@@ -80,6 +80,51 @@ HIGH_WORDS = ["acquire", "acquisition", "merger", "new plant", "capacity", "shut
               "force majeure", "tariff", "sanction", "record", "cut", "closure", "breaks ground", "halt"]
 
 
+# ---------------------------------------------------------------- value-chain focus and function routing
+_KW_CACHE = {}
+
+
+def kw_regex(words):
+    """One regex for a keyword list: short words need whole-word matches, longer ones match as word stems."""
+    key = tuple(words)
+    if key not in _KW_CACHE:
+        parts = []
+        for w in words:
+            w = w.strip().lower()
+            if not w:
+                continue
+            if not re.search(r"[a-z0-9]", w):
+                parts.append(re.escape(w))
+            elif len(w) <= 4:
+                parts.append(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])")
+            else:
+                parts.append(rf"(?<![a-z0-9]){re.escape(w)}")
+        _KW_CACHE[key] = re.compile("|".join(parts) or r"(?!x)x")
+    return _KW_CACHE[key]
+
+
+def focus_of(text, cfg):
+    """Value-chain areas a signal touches (iron ore, pellets, pelletizing, DRP/DRI, meltshop, CCM, sections, market)."""
+    t = str(text).lower()
+    areas = cfg.get("focus_areas") or {}
+    order = cfg.get("focus_order") or list(areas)
+    return [k for k in order if k in areas and kw_regex(areas[k]["words"]).search(t)]
+
+
+def rule_functions(text, cfg):
+    t = f" {str(text).lower()} "
+    return [f for f, words in (cfg.get("function_rules") or {}).items() if f in cfg["functions"] and kw_regex(words).search(t)]
+
+
+def focus_insight(focus, functions, cfg):
+    """Rule-based 'how it affects us' and 'how to use it' for a value-chain area, from config."""
+    area = (cfg.get("focus_areas") or {}).get(focus[0]) if focus else None
+    if not area:
+        return "", ""
+    fn = next((f for f in functions if f in area.get("uses", {})), None) or next(iter(area.get("uses", {})), None)
+    return area.get("uses", {}).get(fn, ""), area.get("action", "")
+
+
 # ---------------------------------------------------------------- config and storage
 def load_env(path=ROOT / ".env"):
     """Minimal .env loader so local runs pick up ANTHROPIC_API_KEY without extra packages."""
@@ -361,11 +406,14 @@ Reply with ONLY a JSON array of the ids to keep, e.g. ["a1","b2"]."""
 
 def analysis_prompt(cfg):
     leaders = "\n".join(f"- {k} ({v['name']}): {v['remit']}" for k, v in cfg["functions"].items())
+    chain = " -> ".join(a["name"] for a in (cfg.get("focus_areas") or {}).values()) or "iron ore -> pellets -> DRI -> steel"
     return f"""You are the market intelligence analyst for a global iron ore, pellet and steel radar.
 Write every "so what" from this perspective: {cfg['perspective']}
 
 Functions you serve:
 {leaders}
+
+Our value chain (map every signal to it): {chain}
 
 Watch areas: {", ".join(cfg['watch_areas'])}
 Regions: {", ".join(cfg['regions'])}
@@ -382,7 +430,10 @@ Rules:
 - functions: only those whose decisions this could change (codes from {", ".join(cfg["functions"])}).
 - hashtags: 2 to 4, preferably from {", ".join(cfg["hashtags"])}; add a new CamelCase hashtag only for a clearly new theme.
 - region: one value from the regions list.
-- what_happened: max 30 words, factual. so_what: max 35 words. action: max 20 words, starts with a verb, or "".
+- what_happened: max 30 words, factual.
+- so_what: max 35 words. How this affects an iron ore pelletizing and steel company: name the part of the value
+  chain it hits (ore, pellets, pelletizing, DRP/DRI, meltshop, CCM, heavy sections, steel market) and the effect.
+- action: max 20 words, starts with a verb: how the company can use this (e.g. renegotiate, hedge, benchmark, approach).
 
 Reply with ONLY a JSON array, one object per headline:
 [{{"id": "...", "relevant": true, "watch_area": "...", "event_type": "2-3 words", "companies": ["..."],
@@ -430,19 +481,27 @@ def guess_region(text):
 
 
 def fallback_analysis(row, cfg):
-    text = f"{row['title']} {row['summary']}".lower()
+    """No AI available: route and explain a headline with keyword rules (value-chain focus + function rules)."""
+    raw = f"{row['title']} {row['summary']}"
+    text = raw.lower()
     if str(row["query"]).startswith("companies:"):
         area = "Competitors"
     else:
         scores = {a: sum(k in text for k in kws) for a, kws in FALLBACK_AREAS.items()}
         area = max(scores, key=scores.get) if max(scores.values()) else "Supply and demand"
-    return {"relevant": True, "watch_area": area, "event_type": "Headline",
-            "companies": [c for c in cfg["companies"] if c.lower() in text][:3], "countries": [],
-            "region": guess_region(text), "functions": AREA_FUNCTIONS.get(area, ["GOV"]), "signal": "neutral",
+    focus = focus_of(raw, cfg)
+    functions = rule_functions(raw, cfg) or AREA_FUNCTIONS.get(area, ["GOV"])
+    so_what, action = focus_insight(focus, functions, cfg)
+    companies = [c for c in cfg["companies"] if kw_regex([c]).search(text)][:3]
+    related = kw_regex(["hormuz", "freight", "shipping", "vessel", "tanker", "port", "coking coal", "coal", "natural gas", "lng",
+                        "energy price", "tariff", "sanction", "mining", "miner", "metals"]).search(text)
+    return {"relevant": bool(focus or companies or related), "watch_area": area, "event_type": "Headline",
+            "companies": companies, "countries": [],
+            "region": guess_region(text), "functions": functions, "signal": "neutral",
             "hashtags": [t for t, kws in FALLBACK_TAGS.items() if any(k in text for k in kws)][:4] or ["#Steel"],
             "impact": min(10, 3 + 2 * sum(w in text for w in HIGH_WORDS)), "confidence": 4,
             "what_happened": row["title"],
-            "so_what": "AI analysis is off. Add ANTHROPIC_API_KEY to get the impact and so-what.", "action": ""}
+            "so_what": so_what or "Keyword match only; open the source to judge the effect on us.", "action": action}
 
 
 def save_insight(db, item_id, a, by, cfg, source_text=""):
@@ -767,8 +826,28 @@ def load_items(db, history_days, cfg):
     srcs = {}
     for s_ in db.execute("SELECT * FROM item_sources WHERE seen_at >= ? ORDER BY seen_at", (since,)):
         srcs.setdefault(s_["item_id"], []).append(s_)
-    items = [finalise(r, srcs.get(r["id"], []), cfg) for r in rows]
+    items = merge_same_story([finalise(r, srcs.get(r["id"], []), cfg) for r in rows], cfg)
     return scanned, [x for x in items if x["date"] >= cutoff]
+
+
+def merge_same_story(items, cfg):
+    """An analyst may describe several differently worded headlines as the same event. Show that event once,
+    with every outlet that reported it (which also upgrades its verification)."""
+    out, by_key = [], {}
+    for x in items:
+        key = x["what_happened"].strip().lower() if x.get("by") not in ("fallback", "") else None
+        if key and key in by_key:
+            m = by_key[key]
+            seen = {(s_["domain"], s_["link"]) for s_ in m["sources"]}
+            m["sources"] += [s_ for s_ in x["sources"] if (s_["domain"], s_["link"]) not in seen]
+            m["outlets"] = len({s_["domain"] or s_["name"] for s_ in m["sources"]})
+            m["verification"] = verification(m["sources"])
+            m["sources"] = m["sources"][:8]
+            continue
+        if key:
+            by_key[key] = x
+        out.append(x)
+    return out
 
 
 def finalise(r, source_rows, cfg):
@@ -784,12 +863,14 @@ def finalise(r, source_rows, cfg):
     conf = min(conf, 5) if status == "unconfirmed" else min(conf, 7) if status == "single" else conf
     if checks:
         conf = max(1, conf - 2)
-    return {
+    text = f"{r['title']} {r['summary']} {r['what_happened']}"
+    leaders = norm_functions(json.loads(r["leaders"] or "[]"), cfg)
+    return {"focus": focus_of(text, cfg),
         "title": r["title"], "link": r["link"], "source": r["source"], "published": (r["published"] or "")[:16],
         "date": item_date(r["published"], r["first_seen"]), "first_seen": r["first_seen"][:10],
         "coverage": r["coverage"], "watch_area": r["watch_area"], "event_type": r["event_type"],
         "companies": json.loads(r["companies"] or "[]"), "countries": json.loads(r["countries"] or "[]"),
-        "region": r["region"] or "Global", "leaders": norm_functions(json.loads(r["leaders"] or "[]"), cfg),
+        "region": r["region"] or "Global", "leaders": leaders, "by": r["analysed_by"] or "",
         "tags": norm_tags(json.loads(r["tags"] or "[]") if "tags" in r.keys() else []), "signal": r["signal"] or "neutral",
         "impact": r["impact"], "confidence": r["confidence"], "what_happened": r["what_happened"],
         "so_what": r["so_what"], "action": r["action"], "sources": sources[:8], "outlets": len(sources),
@@ -833,7 +914,9 @@ def write_reports(cfg, scanned_by_day, items, days, note="", markets=None, hormu
     inline = [x for x in items if x["date"] >= start]
     data = {"generated": dt.datetime.now().strftime("%d %b %Y, %H:%M"), "today": today, "latest": latest,
             "default_days": days, "day_list": day_list, "inline_days": inline_days,
-            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "functions": cfg["functions"], "pinned_hashtags": cfg.get("pinned_hashtags", []), "catalog": source_catalog(cfg), "areas": cfg["watch_areas"],
+            "companies_tracked": len(cfg["companies"]), "competitor_groups": cfg["competitor_groups"], "functions": cfg["functions"],
+            "focus_areas": {k: {"name": v["name"], "uses": v.get("uses", {}), "action": v.get("action", "")} for k, v in (cfg.get("focus_areas") or {}).items()},
+            "focus_order": list((cfg.get("focus_areas") or {})), "pinned_hashtags": cfg.get("pinned_hashtags", []), "catalog": source_catalog(cfg), "areas": cfg["watch_areas"],
             "regions": cfg["regions"], "items": inline, "note": note, "markets": markets if markets is not None else load_markets(),
             "hormuz": hormuz if hormuz is not None else load_hormuz()}
     page = TEMPLATE_PATH.read_text(encoding="utf-8").replace(
@@ -949,10 +1032,54 @@ def serve(cfg, port, daily, days):
     ThreadingHTTPServer(("0.0.0.0", port), handler).serve_forever()
 
 
+# ---------------------------------------------------------------- analyses from outside the pipeline
+def import_insights(cfg, db, path, by="claude"):
+    """Load analyses written outside the pipeline (e.g. by Claude in a chat session) as a JSON array of
+    {"id": ..., <same fields as the AI analysis>}. Runs the same figure check as the API path."""
+    rows = json.loads(Path(path).read_text(encoding="utf-8"))
+    n = 0
+    for a in rows:
+        r = db.execute("SELECT title, summary FROM items WHERE id = ?", (a.get("id"),)).fetchone()
+        if not r:
+            continue
+        if a.get("relevant", True) is False:
+            save_insight(db, a["id"], {"relevant": False}, by, cfg)
+        else:
+            src = f"{r['title']} {r['summary']}"
+            if figure_check(a.get("what_happened", ""), src):  # shared summary quotes figures this outlet did not: use its own headline
+                a = {**a, "what_happened": r["title"]}
+            save_insight(db, a["id"], {"relevant": True, **a}, by, cfg, src)
+        n += 1
+    db.commit()
+    print(f"import: {n} insights saved from {path}")
+    return n
+
+
+def reclassify(cfg, db):
+    """Re-run the keyword rules over every signal that was analysed without AI (after a config change)."""
+    rows = db.execute("SELECT i.* FROM items i JOIN insights n ON n.item_id = i.id WHERE n.analysed_by = 'fallback'").fetchall()
+    for r in rows:
+        save_insight(db, r["id"], fallback_analysis(r, cfg), "fallback", cfg)
+    db.commit()
+    print(f"reclassify: {len(rows)} keyword-only signals re-routed")
+
+
+def export_pending(cfg, db, path, since_days=1):
+    """Write headlines that still have keyword-only analysis to a JSON file for review by an analyst or Claude."""
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=since_days)).isoformat()
+    rows = db.execute("""SELECT i.id, i.title, i.summary, i.source FROM items i JOIN insights n ON n.item_id = i.id
+                         WHERE n.analysed_by = 'fallback' AND n.relevant = 1 AND i.first_seen >= ? ORDER BY i.first_seen""", (since,)).fetchall()
+    Path(path).write_text(json.dumps([dict(r) for r in rows], ensure_ascii=False, indent=0), encoding="utf-8")
+    print(f"export: {len(rows)} headlines written to {path}")
+
+
 # ---------------------------------------------------------------- CLI
 def main():
     ap = argparse.ArgumentParser(description="Ore & Steel Radar")
-    ap.add_argument("command", choices=["run", "collect", "analyse", "markets", "report", "demo", "serve", "backfill"])
+    ap.add_argument("command", choices=["run", "collect", "analyse", "markets", "report", "demo", "serve", "backfill",
+                                         "import", "reclassify", "export"])
+    ap.add_argument("--file", help="JSON file for import / export")
+    ap.add_argument("--since", type=int, default=1, help="days of headlines to export")
     ap.add_argument("--max", type=int, default=4000, help="max headlines analysed by backfill")
     ap.add_argument("--config", default=str(ROOT / "config.yaml"))
     ap.add_argument("--days", type=int, default=None, help="dashboard window in days (default: settings.report_days)")
@@ -974,6 +1101,16 @@ def main():
     if args.command == "backfill":
         backfill(cfg, db, args.days or 120, max_items=args.max)
         report(cfg, db, cfg["settings"].get("report_days", 7))
+        return
+    if args.command in ("import", "reclassify", "export"):
+        if args.command == "import":
+            import_insights(cfg, db, args.file)
+        elif args.command == "reclassify":
+            reclassify(cfg, db)
+        else:
+            export_pending(cfg, db, args.file or "pending.json", args.since)
+            return
+        report(cfg, db, days)
         return
     sources = [("test", f) for f in args.feeds] if args.feeds else None
     if args.command in ("run", "collect"):

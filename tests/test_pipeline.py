@@ -235,3 +235,12 @@ def test_equities_fall_back_to_yahoo(tmp_path, monkeypatch):
     monkeypatch.setattr(radar, "fetch_text", lambda url, timeout=30: json.dumps(chart) if "VALE" in url else "")
     e = radar.fetch_markets(cfg)["equities"][0]
     assert e["name"] == "Vale" and e["change_1m_pct"] is not None and e["change_3m_pct"] is not None
+
+
+def test_focus_and_function_rules():
+    cfg = radar.load_config(radar.ROOT / "config.yaml")
+    assert radar.focus_of("Saudi Arabia opens anti-dumping probe into hot-rolled steel sections", cfg)[0] == "HSM"
+    assert "DRP" in radar.focus_of("Midrex chosen for direct reduction at new DRI plant", cfg)
+    assert "MELTSHOP" in radar.focus_of("New electric arc furnace meltshop starts", cfg)
+    assert radar.focus_of("Company drives growth", cfg) == []          # 'dri' must not match 'drives'
+    assert "SCM" in radar.rule_functions("Freight rates surge as vessels avoid Hormuz", cfg)

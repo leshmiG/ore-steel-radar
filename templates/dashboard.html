@@ -114,6 +114,26 @@ h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%
 .lead[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff;box-shadow:0 10px 24px -12px rgba(14,22,33,.6)}
 .lead[aria-pressed="true"] small{color:#c9d1da}
 .remit{margin-top:12px;color:var(--muted);font-size:14px}
+.chainhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:22px 0 10px}
+.chainhead h3{margin:0;font:800 19px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel)}
+.chainhead span{color:var(--muted);font-size:13px}
+.chain{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;counter-reset:step}
+.link{appearance:none;text-align:left;cursor:pointer;border:1px solid var(--line-2);background:var(--surface);border-radius:14px;padding:13px 14px 12px;display:flex;flex-direction:column;gap:7px;min-width:0;position:relative;transition:transform .15s,border-color .15s,box-shadow .2s;font:inherit;color:inherit}
+.link:hover{transform:translateY(-2px);border-color:var(--steel-mid);box-shadow:0 12px 26px -18px rgba(14,22,33,.5)}
+.link[aria-pressed="true"]{border-color:var(--steel);box-shadow:inset 0 0 0 1px var(--steel),0 12px 26px -18px rgba(14,22,33,.6)}
+.link.zero{opacity:.55}
+.link .lt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.link .lt b{font:800 16px/1.1 var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--ink)}
+.link .lt b::before{counter-increment:step;content:counter(step,decimal-leading-zero) " ";color:var(--faint);font-weight:700}
+.link .n{font:800 22px/1 var(--display);color:var(--steel)}
+.link .bal{font:500 11.5px var(--mono);color:var(--muted);display:flex;gap:10px}
+.link .bal .tw{color:var(--tail)}.link .bal .hw{color:var(--head)}
+.link .top{font-size:13px;line-height:1.35;color:#2c3744;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.link .use{font-size:12.5px;line-height:1.4;color:var(--muted);border-top:1px dashed var(--line-2);padding-top:7px;margin-top:auto}
+.link .use em{font-style:normal;font:800 11.5px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--steel);margin-right:4px}
+.fchip{display:inline-block;border-radius:999px;padding:2px 9px;font:600 11px var(--mono);background:#e9eef4;color:var(--steel)}
+@media (max-width:900px){.chain{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.chain{grid-template-columns:1fr}}
 .remit b{color:var(--ink);font-weight:600}
 
 .top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
@@ -159,7 +179,7 @@ h1 em{font-style:normal;background:linear-gradient(100deg,#1f2933 0%,#6f7c89 38%
 .sig.neutral{color:#4e545c;background:#eef0f2}
 .new{font:700 10.5px var(--mono);letter-spacing:.08em;color:#fff;background:var(--steel);padding:2px 7px;border-radius:4px}
 .what{font-weight:600;font-size:16px;line-height:1.4;margin:0;text-wrap:pretty}
-.kv{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;font-size:14px;margin:0}
+.kv{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;font-size:14px;margin:0}
 .kv dt{font:800 13px/1.75 var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:0}
 .kv dd{margin:0;color:#2c3744}
 .cfoot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px}
@@ -311,9 +331,11 @@ footer .inner{padding-block:22px 40px;display:flex;flex-wrap:wrap;gap:8px 24px;j
   <section class="section gutter"><div class="inner">
     <h2>Your briefing</h2>
     <p class="sub">Pick a function to filter every call, chart and signal on this page.</p>
-    <p class="why"><b>Why it matters for us</b>Each function sees only the news that could change its decisions, with a suggested next step, so nothing important is missed and nobody wades through noise.</p>
+    <p class="why"><b>Why it matters for us</b>Each function sees what moves our value chain (iron ore → pellets → pelletizing → DRP/DRI → meltshop → CCM → heavy sections → steel market), how it affects us and how we can use it.</p>
     <div class="leaders" role="group" aria-label="Function" id="leaders"></div>
     <div class="remit" id="remit"></div>
+    <div class="chainhead"><h3>Our value chain</h3><span id="chainSub">Click a stage to focus every view on it.</span></div>
+    <div class="chain" id="chain" role="group" aria-label="Value chain focus"></div>
     <div class="compbar" id="compbar">
       <span class="lbl">Competitors</span>
       <button class="pick" id="pickBtn" aria-expanded="false" aria-controls="picker">Choose competitors</button>
@@ -423,7 +445,7 @@ const FIRST = DAYS[0] || DATA.latest, LAST = DATA.latest;
 const SCANNED = Object.fromEntries(DATA.day_list.map(d => [d.date, d.scanned]));
 const LOADED = new Set(DATA.inline_days);
 let ALL = DATA.items.slice();
-const state = {leader:"All", area:"All", region:"All", signal:"All", ver:"All", imp:7, ftag:"All", tag:null, q:"", preset:String(DATA.default_days || 7),
+const state = {focus:"All", leader:"All", area:"All", region:"All", signal:"All", ver:"All", imp:7, ftag:"All", tag:null, q:"", preset:String(DATA.default_days || 7),
   from:addDays(LAST, -((DATA.default_days || 7) - 1)), to:LAST};
 const inRange = x => x.date >= state.from && x.date <= state.to;
 /* competitor selection: a signal matches when it names a selected company (or mentions it in the headline) */
@@ -434,7 +456,10 @@ const lc = s => String(s || "").toLowerCase();
 const word = (text, n) => new RegExp(`(^|[^a-z0-9])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z0-9])`).test(lc(text));
 const mentions = (x, name) => { const n = lc(name); return x.companies.some(c => lc(c) === n || word(c, n)) || word(x.title, n) || word(x.what_happened, n); };
 const matchCo = x => !SEL.size || [...SEL].some(n => mentions(x, n));
-const pool = () => ALL.filter(x => inRange(x) && matchCo(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
+const matchFocus = x => state.focus === "All" || (x.focus || []).includes(state.focus);
+const pool = () => ALL.filter(x => inRange(x) && matchCo(x) && matchFocus(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
+const FOCUS = DATA.focus_areas || {}, FOCUS_ORDER = DATA.focus_order || Object.keys(FOCUS);
+const focusChips = x => (x.focus || []).slice(0, 2).map(f => FOCUS[f] ? `<span class="fchip">${esc(FOCUS[f].name)}</span>` : "").join("");
 
 async function ensureLoaded(){
   const need = DAYS.filter(d => d >= state.from && d <= state.to && !LOADED.has(d));
@@ -557,7 +582,7 @@ document.getElementById("coClear").onclick = () => { SEL.clear(); saveSel(); ren
 document.getElementById("coQ").oninput = renderPicker;
 
 function renderLeaders(){
-  const inP = ALL.filter(x => inRange(x) && matchCo(x));
+  const inP = ALL.filter(x => inRange(x) && matchCo(x) && matchFocus(x));
   document.getElementById("leaders").innerHTML = ["All", ...Object.keys(DATA.functions)].map(l => {
     const n = l === "All" ? inP.length : inP.filter(x => x.leaders.includes(l)).length;
     return `<button class="lead" aria-pressed="${state.leader === l}" data-l="${l}">${l === "All" ? "All functions" : esc(DATA.functions[l].name)}<small>${n}</small></button>`;
@@ -566,6 +591,26 @@ function renderLeaders(){
   document.getElementById("remit").innerHTML = state.leader === "All"
     ? "Showing every signal. Each one is routed to the functions whose decisions it could change."
     : `<b>${esc(DATA.functions[state.leader].name)}</b> · ${esc(DATA.functions[state.leader].remit)}`;
+}
+
+function renderChain(){
+  const inP = ALL.filter(x => inRange(x) && matchCo(x) && (state.leader === "All" || x.leaders.includes(state.leader)));
+  const fn = state.leader === "All" ? null : state.leader;
+  document.getElementById("chain").innerHTML = FOCUS_ORDER.map(k => {
+    const a = FOCUS[k], list = inP.filter(x => (x.focus || []).includes(k));
+    const top = [...list].sort((p, q) => q.impact - p.impact || q.confidence - p.confidence)[0];
+    const tw = list.filter(x => x.signal === "tailwind").length, hw = list.filter(x => x.signal === "headwind").length;
+    const use = fn ? (a.uses || {})[fn] : (top && top.action) || a.action;
+    return `<button class="link${list.length ? "" : " zero"}" aria-pressed="${state.focus === k}" data-f="${k}">
+      <span class="lt"><b>${esc(a.name)}</b><span class="n">${list.length}</span></span>
+      <span class="bal"><span class="tw">▲ ${tw} tailwind</span><span class="hw">▼ ${hw} headwind</span></span>
+      <span class="top">${top ? `<strong>${top.impact}/10</strong> ${esc(top.what_happened)}` : "Nothing in this period."}</span>
+      <span class="use"><em>${fn ? "How we use it" : "Do"}</em>${esc(use || "")}</span></button>`;
+  }).join("");
+  document.getElementById("chainSub").textContent = state.focus === "All"
+    ? "Click a stage to focus every view on it."
+    : `Focused on ${FOCUS[state.focus].name}. Click it again to show the whole chain.`;
+  document.querySelectorAll("#chain .link").forEach(b => b.onclick = () => { state.focus = state.focus === b.dataset.f ? "All" : b.dataset.f; renderAll(); });
 }
 
 function gauge(n, size = 52){
@@ -585,10 +630,10 @@ function renderTop3(){
   const top = [...pool()].sort((a, b) => b.impact - a.impact || b.confidence - a.confidence).slice(0, 3);
   document.getElementById("top3").innerHTML = top.length ? top.map((x, i) => `<article class="call pop" style="--d:${i * 90}ms;--sev:var(--heat-${band(x.impact)})">
       <span class="rank">0${i + 1}</span>
-      <div class="meta">${gauge(x.impact, 44)}${verChip(x)}${sigChip(x.signal)}</div>
+      <div class="meta">${gauge(x.impact, 44)}${verChip(x)}${sigChip(x.signal)}${focusChips(x)}</div>
       <h3>${esc(x.what_happened)}</h3>
-      <dl class="kv"><dt>So what</dt><dd>${esc(x.so_what)}</dd></dl>
-      ${x.action ? `<dl class="kv"><dt>Do</dt><dd>${esc(x.action)}</dd></dl>` : ""}
+      <dl class="kv"><dt>Impact on us</dt><dd>${esc(x.so_what)}</dd></dl>
+      ${x.action ? `<dl class="kv"><dt>How to use it</dt><dd>${esc(x.action)}</dd></dl>` : ""}
       <div class="cfoot">${outletLine(x)}<span>${fmt(x.date)} · confidence ${x.confidence}/10</span></div>
     </article>`).join("") : `<div class="empty">No signals for this leader in this period.</div>`;
 }
@@ -673,13 +718,13 @@ function renderFeed(){
   feed.innerHTML = list.map((x, i) => `<article class="card pop" style="--d:${Math.min(i, 10) * 45}ms;--sev:var(--heat-${band(x.impact)})">
     <div class="gauge">${gauge(x.impact)}<span>Impact</span></div>
     <div class="cbody">
-      <div class="meta">${x.first_seen === DATA.today ? `<span class="new">NEW</span>` : ""}${verChip(x)}${sigChip(x.signal)}${checkChips(x)}<span class="chip">${esc(x.watch_area)}</span><span>${esc(x.event_type)}</span><span>${esc(x.region)}</span>${x.companies.length ? `<span>${esc(x.companies.join(", "))}</span>` : ""}</div>
+      <div class="meta">${x.first_seen === DATA.today ? `<span class="new">NEW</span>` : ""}${verChip(x)}${sigChip(x.signal)}${checkChips(x)}${focusChips(x)}<span class="chip">${esc(x.watch_area)}</span><span>${esc(x.event_type)}</span><span>${esc(x.region)}</span>${x.companies.length ? `<span>${esc(x.companies.join(", "))}</span>` : ""}</div>
       <p class="what">${esc(x.what_happened)}</p>
-      <dl class="kv"><dt>So what</dt><dd>${esc(x.so_what)}</dd></dl>
-      ${x.action ? `<dl class="kv"><dt>Do</dt><dd>${esc(x.action)}</dd></dl>` : ""}
+      <dl class="kv"><dt>Impact on us</dt><dd>${esc(x.so_what)}</dd></dl>
+      ${x.action ? `<dl class="kv"><dt>How to use it</dt><dd>${esc(x.action)}</dd></dl>` : ""}
       ${(x.tags || []).length ? `<div class="meta">${x.tags.map(t => `<span class="htag">${esc(t)}</span>`).join(" ")}</div>` : ""}
       <div class="cfoot"><div class="who">${x.leaders.map(l => `<span title="${esc(DATA.functions[l] ? DATA.functions[l].name : l)}">${esc(FN_SHORT[l] || l)}</span>`).join("")}</div>
-        <span>${outletLine(x)} · ${x.published ? fmt(x.date, true) : "seen " + fmt(x.date, true)} · confidence ${x.confidence}/10</span></div>
+        <span>${outletLine(x)} · ${x.published ? fmt(x.date, true) : "seen " + fmt(x.date, true)} · confidence ${x.confidence}/10${x.by === "fallback" ? " · keyword rules" : x.by ? " · AI-analysed" : ""}</span></div>
     </div></article>`).join("");
 }
 
@@ -803,7 +848,7 @@ function renderSources(){
     return g.length ? `<h4>${label[t]} (${g.length})</h4><div class="chips">${g.map(x => `<a href="https://${esc(x.domain)}" target="_blank" rel="noopener">${esc(x.domain)}</a>`).join("")}</div>` : ""; }).join("");
 }
 
-function renderAll(){ renderCompbar(); renderLeaders(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
+function renderAll(){ renderCompbar(); renderLeaders(); renderChain(); renderTop10(); fillTagSelect(); renderTicker(); renderHero(); renderTop3(); renderCharts(); renderFeed(); }
 
 if (window.Chart) {
   Chart.defaults.color = C.muted; Chart.defaults.borderColor = C.line; Chart.defaults.font.family = MONO; Chart.defaults.font.size = 11;

@@ -159,3 +159,19 @@ triage model drops the off-topic rest cheaply, and typically 80 to 200 signals a
 - Claude may use only the headline and summary and is told never to invent numbers, names or dates.
 - Every signal keeps its source link. Check the source before acting.
 - Only RSS feeds and public pages are used. Do not add LinkedIn scraping; it breaks LinkedIn's terms.
+
+## Value-chain focus and analyst imports
+
+Every signal is mapped to the value chain in `config.yaml` (`focus_areas`): iron ore, iron pellets, pelletizing,
+DRP/DRI, meltshop, CCM/casting, heavy section mill and steel market. Each stage carries a per-function
+"how we use it" line, and `function_rules` route keyword matches to Governance & Strategy, Finance & Risk,
+Supply Chain and Innovation & Research.
+
+Without an API key you can still get analyst-quality signals:
+
+```bash
+python radar.py export --file pending.json --since 1   # today's keyword-only headlines
+# ...analyse them (e.g. with Claude in chat) into the same JSON fields the AI returns...
+python radar.py import --file analysed.json             # saves them and rebuilds the dashboard
+python radar.py reclassify                              # re-apply keyword rules after editing config.yaml
+```

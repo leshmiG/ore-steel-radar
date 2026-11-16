@@ -1,6 +1,6 @@
-# Ore & Steel Radar brief, 2026-11-15
+# Ore & Steel Radar brief, 2026-11-16
 
-2425 headlines scanned, 2066 relevant signals (2026-11-09 to 2026-11-15).
+2309 headlines scanned, 1983 relevant signals (2026-11-10 to 2026-11-16).
 
 ## Governance & Strategy
 - **[9/10] Saudi Arabia opens an anti-dumping probe into hot-rolled steel sections imported from China and Türkiye.** Directly protects GCC heavy-section producers: duties would reduce Chinese and Turkish section competition in Saudi Arabia, our key market. *Action:* Prepare to support the probe with data; plan section sales growth in Saudi Arabia. ([SteelOrbis](https://news.google.com/rss/articles/CBMixgFBVV95cUxObm9ZdUgyUGxGbUFyR3hiWXJiVUlib2F6WWNBT0hFZFo3WWpVQ2h0SzNjTmtQc1dSYTBwa3JGYl9jUG1wdFdFS2FuZkRYd0ZyZkVBaDQyamdQck1WWkZTdjI5bkNydi14bktzaDhvNGlKM0pUNnl1QWwzNm5zWF9TWmdBUWJYVkxJNW9FNms5aHZBMFExN0l5TFpiN2Fucm5CQzVPU3ktdUhqdnh0TFpZQXhhbzBWeHo4MEo2bHRLa1JJVUhIbWc?oc=5))

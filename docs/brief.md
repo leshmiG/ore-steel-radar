@@ -1,6 +1,6 @@
 # Ore & Steel Radar brief, 2026-11-22
 
-2424 headlines scanned, 2317 relevant signals (2026-11-16 to 2026-11-22).
+2471 headlines scanned, 2362 relevant signals (2026-11-16 to 2026-11-22).
 
 ## Governance & Strategy
 - **[7/10] Canada, China agree to cut tariffs on US$280M worth of Canadian exports - Philippine Canadian Inquirer** Market and policy shifts (tariffs, CBAM, demand) shape where we sell and invest. *Action:* Review impact on our sales plan and export markets. ([Philippine Canadian Inquirer](https://news.google.com/rss/articles/CBMirwFBVV95cUxNbU1DelBmaDdJSzltSGsxLS03NE5NUXJ0bUNjb0tmemc0bUhVYlZ0NEp6Q1dmMFF4RUpvU1VaWmVqaEFOMFhHaVVMUkdRYWVfREZfWWhHbW8yTU5ickNQb0o4RmQ4Z3ZYVkpqT1M3cFRCdGhoemRrYjRzb2pnSXBOWUFxM2k5amVsQjMzdzNGRGF5MTdGWkN2Q2UtVTJJTmp3NExSU1VFUU9XVlFYSFQw?oc=5))

@@ -716,7 +716,9 @@ def load_agenda(items=None, latest=None):
                   key=lambda x: (x.get("by") == "fallback", -x["impact"], -x["confidence"], x["verification"] != "verified"))
     picked, seen = [], set()
     for x in pool:
-        keys = {" ".join(x["what_happened"].lower().split()[:5]), "do:" + x["action"].strip().lower()}
+        keys = {" ".join(x["what_happened"].lower().split()[:5])}
+        if x.get("by") != "fallback":  # keyword-rule actions are shared templates, so only dedupe analysed ones by action
+            keys.add("do:" + x["action"].strip().lower())
         if keys & seen:  # same story, or the same analysis told by another outlet
             continue
         seen |= keys

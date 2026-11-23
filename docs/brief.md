@@ -1,4 +1,4 @@
-# Ore & Steel Radar brief, 2026-11-22
+# Ore & Steel Radar brief, 2026-11-23
 
 2471 headlines scanned, 2362 relevant signals (2026-11-16 to 2026-11-22).
 

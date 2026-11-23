@@ -711,24 +711,27 @@ def load_agenda(items=None, latest=None):
         agenda = None
     if items is None or not latest or (agenda and agenda.get("as_of", "") >= latest):
         return agenda
-    since = (dt.date.fromisoformat(latest) - dt.timedelta(days=2)).isoformat()
-    pool = sorted([x for x in items if x["date"] >= since and x["impact"] >= 6 and x.get("action")],
-                  key=lambda x: (x.get("by") == "fallback", -x["impact"], -x["confidence"], x["verification"] != "verified"))
-    picked, seen = [], set()
-    for x in pool:
-        keys = {" ".join(x["what_happened"].lower().split()[:5])}
-        if x.get("by") != "fallback":  # keyword-rule actions are shared templates, so only dedupe analysed ones by action
-            keys.add("do:" + x["action"].strip().lower())
-        if keys & seen:  # same story, or the same analysis told by another outlet
-            continue
-        seen |= keys
-        picked.append({"title": x["what_happened"], "focus": (x.get("focus") or [""])[0], "impact": x["impact"],
-                       "facts": x["so_what"], "decision": x["action"]})
-        if len(picked) == 6:
+    picked, seen, back = [], set(), 2
+    for back, floor in ((2, 6), (6, 5)):  # last 3 days first; widen to a week if the news is thin
+        since = (dt.date.fromisoformat(latest) - dt.timedelta(days=back)).isoformat()
+        pool = sorted([x for x in items if x["date"] >= since and x["impact"] >= floor and x.get("action")],
+                      key=lambda x: (x.get("by") == "fallback", -x["impact"], -x["confidence"], x["verification"] != "verified"))
+        for x in pool:
+            keys = {" ".join(x["what_happened"].lower().split()[:5])}
+            if x.get("by") != "fallback":  # keyword-rule actions are shared templates, so only dedupe analysed ones by action
+                keys.add("do:" + x["action"].strip().lower())
+            if keys & seen:
+                continue
+            seen |= keys
+            picked.append({"title": x["what_happened"], "focus": (x.get("focus") or [""])[0], "impact": x["impact"],
+                           "facts": x["so_what"], "decision": x["action"]})
+            if len(picked) == 6:
+                break
+        if len(picked) >= 4:
             break
     if not picked:
         return agenda
-    start = (dt.date.fromisoformat(latest) - dt.timedelta(days=2)).strftime("%d %b")
+    start = (dt.date.fromisoformat(latest) - dt.timedelta(days=back)).strftime("%d %b")
     return {"as_of": latest, "period": f"{start} – {dt.date.fromisoformat(latest).strftime('%d %b %Y')}",
             "by": "automatic selection of the strongest signals (no analyst review yet today)", "items": picked,
             "questions": (agenda or {}).get("questions", []), "also": [], "skip": (agenda or {}).get("skip", "")}

@@ -1,6 +1,6 @@
 # Ore & Steel Radar brief, 2026-11-23
 
-2258 headlines scanned, 2158 relevant signals (2026-11-17 to 2026-11-23).
+2431 headlines scanned, 2322 relevant signals (2026-11-17 to 2026-11-23).
 
 ## Governance & Strategy
 - **[7/10] Democrats Win Both Chambers of Congress, Plan Sweeping Review of Trump's Tariffs and Tax Cuts - BigGo Finance** Market and policy shifts (tariffs, CBAM, demand) shape where we sell and invest. *Action:* Review impact on our sales plan and export markets. ([BigGo Finance](https://news.google.com/rss/articles/CBMidkFVX3lxTFA4Ml9abUQ2XzMzZmVkeFFmR0YxdGhjaTVQSFlWS3FyZTBqZVZ5N01RZE1RQi1ZWE1JZ056LTRkMG5KWHhrOE9IbF9SeGlxUHlFc1JnZjFJRDVRQjZOUUlzb3VDRlhxMUE0WjRZUFZDVGZaYWxVTXc?oc=5))

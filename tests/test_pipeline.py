@@ -18,7 +18,7 @@ def make_cfg(tmp_path):
 def test_sources_cover_topics_and_all_companies(tmp_path):
     cfg = make_cfg(tmp_path)
     sources = radar.build_sources(cfg)
-    company_queries = [u for label, u in sources if label.startswith("companies:")]
+    company_queries = [u for label, u in sources if label.startswith("companies:") and "@" not in label]
     assert len(cfg["companies"]) > 60
     assert len(company_queries) == sum(-(-len(v) // 4) for v in cfg["competitor_groups"].values())
     assert len(sources) >= len(cfg["topics"]) + len(company_queries)

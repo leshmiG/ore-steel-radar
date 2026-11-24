@@ -32,7 +32,6 @@ ROOT = Path(__file__).resolve().parent
 TEMPLATE_PATH = ROOT / "templates" / "dashboard.html"
 LEGACY_FUNCTIONS = {"CEO": "GOV", "CFO": "FIN", "SMO": "FIN", "CPO": "SCM", "CTO": "INN"}  # older databases
 SIGNALS = ["tailwind", "headwind", "neutral"]
-GOOGLE_NEWS = "https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
 
 # A headline must mention one of these (or a tracked company) before any LLM spend.
 CORE_TERMS = [
@@ -206,21 +205,38 @@ def norm_title(title):
     return re.sub(r"[^a-z0-9 ]", "", title.lower()).strip()
 
 
+BING_NEWS = "https://www.bing.com/news/search?q={q}&format=rss&count=50&setlang=en"
+
+
+def google_news(q, edition="US:en"):
+    country, lang = edition.split(":")
+    return (f"https://news.google.com/rss/search?q={urllib.parse.quote(q)}"
+            f"&hl={lang}-{country}&gl={country}&ceid={country}:{lang}")
+
+
 def build_sources(cfg, window=None):
-    """(label, url) pairs: one search per topic, companies OR-ed in groups of 4, industry sites, extra feeds.
-    window=(after, before) dates replaces the rolling lookback (used by backfill)."""
-    when = f"after:{window[0]} before:{window[1]}" if window else f"when:{cfg['settings'].get('lookback', '2d')}"
-    out = [(t, GOOGLE_NEWS.format(q=urllib.parse.quote(f"{t} {when}"))) for t in cfg.get("topics", [])]
+    """(label, url) pairs. Daily: every topic and competitor group searched in several Google News editions
+    (US, India, Australia, UK, UAE…) and on Bing News, one site: search per watched website, plus direct RSS feeds.
+    window=(after, before) dates replaces the rolling lookback (used by backfill, US edition only)."""
+    s = cfg["settings"]
+    when = f"after:{window[0]} before:{window[1]}" if window else f"when:{s.get('lookback', '2d')}"
+    editions = ["US:en"] if window else (s.get("news_editions") or ["US:en"])
+    searches = [(t, t) for t in cfg.get("topics", [])]
     for group, names in cfg["competitor_groups"].items():
         for i in range(0, len(names), 4):
             ors = " OR ".join(f'"{n}"' for n in names[i:i + 4])
-            q = f"({ors}) (iron ore OR pellets OR steel) {when}"
-            out.append((f"companies:{group}", GOOGLE_NEWS.format(q=urllib.parse.quote(q))))
+            searches.append((f"companies:{group}", f"({ors}) (iron ore OR pellets OR steel OR DRI OR mining)"))
+    out = []
+    for ed in editions:
+        tag = "" if ed == editions[0] else f"@{ed.split(':')[0]}"
+        out += [(label + tag, google_news(f"{q} {when}", ed)) for label, q in searches]
+    if not window and s.get("bing_news", True):
+        out += [(label + "@bing", BING_NEWS.format(q=urllib.parse.quote(q))) for label, q in searches]
     for d in cfg.get("site_watch", []):
         q = f"site:{d} (iron ore OR pellets OR steel OR DRI OR HBI OR Hormuz) {when}"
-        out.append((f"site:{d}", GOOGLE_NEWS.format(q=urllib.parse.quote(q))))
+        out.append((f"site:{d}", google_news(q)))
     if not window:
-        out += [("feed", f) for f in cfg.get("feeds", [])]
+        out += [(f"feed:{domain_of(f)}", f) for f in cfg.get("feeds", [])]
     return out
 
 
@@ -360,17 +376,35 @@ def collect(cfg, db, sources=None, pause=0.0, dedupe_days=14, window=None):
         seen.add(item_id, key)
         counts["added"] += 1
 
-    for label, url in (sources or build_sources(cfg, window)):
+    from concurrent.futures import ThreadPoolExecutor
+    srcs = sources or build_sources(cfg, window)
+
+    def fetch(pair):
+        label, url = pair
         if pause:
             time.sleep(pause)
         try:
-            for rec in rss_records(url, label):
-                try:
-                    ingest(rec, label)
-                except sqlite3.Error as exc:  # one bad record never drops the rest of the feed
-                    print(f"collect: skipped one item from {label} ({exc})")
+            return label, list(rss_records(url, label)), None
         except Exception as exc:  # one bad feed never stops the run
-            print(f"collect: {label} failed ({exc})")
+            return label, [], exc
+
+    empty_feeds, by_kind = [], {}
+    with ThreadPoolExecutor(max_workers=int(cfg["settings"].get("fetch_workers", 6))) as pool:
+        for label, recs, exc in pool.map(fetch, srcs):
+            kind = "bing" if label.endswith("@bing") else label.split(":")[0] if label.startswith(("site:", "feed:", "companies:")) else "topic"
+            by_kind[kind] = by_kind.get(kind, 0) + len(recs)
+            if exc:
+                print(f"collect: {label} failed ({exc})")
+            if label.startswith("feed:") and not recs:
+                empty_feeds.append(label[5:])
+            for rec in recs:
+                try:
+                    ingest(rec, label.split("@")[0])
+                except sqlite3.Error as exc2:  # one bad record never drops the rest of the feed
+                    print(f"collect: skipped one item from {label} ({exc2})")
+    print(f"collect: {len(srcs)} searches and feeds; headlines read by kind {by_kind}")
+    if empty_feeds:
+        print(f"collect: direct feeds that returned nothing: {', '.join(empty_feeds)}")
     if sources is None:
         throttled = 0
         for q in cfg.get("gdelt_queries", []):

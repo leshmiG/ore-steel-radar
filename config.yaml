@@ -173,6 +173,57 @@ topics:
   - Strait of Hormuz steel
   - Hormuz tanker attacks
   - Gulf shipping war risk insurance
+  # more searches (Nov 2026)
+  - iron ore shipments
+  - iron ore port stocks China
+  - iron ore exports Brazil
+  - iron ore exports Australia
+  - Simandou iron ore
+  - Guinea iron ore
+  - Labrador iron ore
+  - Mauritania iron ore
+  - India iron ore exports
+  - Iran iron ore
+  - Ukraine iron ore
+  - pellet plant
+  - DRI price
+  - HBI exports
+  - merchant DRI
+  - sponge iron price
+  - steel billet price
+  - steel sections price
+  - H-beam price
+  - steel plant project
+  - new steel mill
+  - steel capacity expansion
+  - EAF project
+  - hydrogen steel plant
+  - steel decarbonisation
+  - graphite electrode price
+  - ferroalloy prices
+  - industrial gas price Middle East
+  - GCC steel demand
+  - UAE steel
+  - Oman steel
+  - Qatar steel
+  - Kuwait steel
+  - Bahrain steel
+  - Egypt steel
+  - Turkey steel
+  - Iran steel
+  - Vietnam steel
+  - Japan steel exports
+  - Korea steel
+  - steel anti-dumping
+  - steel import duty GCC
+  - EU steel safeguard
+  - US steel tariffs
+  - Capesize rates
+  - Red Sea shipping
+  - Suez Canal shipping
+  - bunker fuel price
+  - dry bulk market
+  - steel construction demand Saudi
 
 # Companies tracked worldwide (searched in groups of 4 with OR)
 competitors:
@@ -199,6 +250,21 @@ competitors:
     - SNIM
     - Gulf Industrial Investment
     - Bahrain Steel
+    - Iron Ore Company of Canada
+    - Labrador Iron Ore Royalty
+    - Roy Hill
+    - Mount Gibson Iron
+    - Grange Resources
+    - Vale Oman
+    - Ma'aden
+    - Golgohar
+    - Chadormalu
+    - Lloyds Metals
+    - Odisha Mining Corporation
+    - Mesabi Metallics
+    - Winning Consortium Simandou
+    - ArcelorMittal Liberia
+    - Sishen
   steelmakers_china:
     - China Baowu
     - Baosteel
@@ -209,6 +275,12 @@ competitors:
     - Shougang
     - Shandong Iron and Steel
     - Hunan Valin
+    - Baotou Steel
+    - Maanshan Iron and Steel
+    - Benxi Steel
+    - Rizhao Steel
+    - Tsingshan
+    - Delong Steel
   steelmakers_asia_india:
     - Nippon Steel
     - JFE Steel
@@ -221,6 +293,13 @@ competitors:
     - AM/NS India
     - Hoa Phat
     - Krakatau Steel
+    - Dongkuk Steel
+    - China Steel Corporation
+    - Kobe Steel
+    - Formosa Ha Tinh
+    - Shyam Metalics
+    - Jindal Stainless
+    - Lloyds Steel
   steelmakers_europe_cis:
     - ArcelorMittal
     - thyssenkrupp Steel
@@ -234,6 +313,14 @@ competitors:
     - Evraz
     - Erdemir
     - Tosyali
+    - Tata Steel Nederland
+    - Acciaierie d'Italia
+    - Dillinger
+    - Saarstahl
+    - Celsa Group
+    - Habas
+    - Kardemir
+    - Isdemir
   steelmakers_americas:
     - Nucor
     - Steel Dynamics
@@ -241,6 +328,12 @@ competitors:
     - Gerdau
     - Ternium
     - Usiminas
+    - Commercial Metals
+    - CSN
+    - ArcelorMittal Brasil
+    - Algoma Steel
+    - Stelco
+    - Cleveland-Cliffs Steel
   gcc_middle_east_africa:
     - Hadeed
     - EMSTEEL
@@ -254,6 +347,20 @@ competitors:
     - Mobarakeh Steel
     - Essar
     - ArcelorMittal South Africa
+    - SABIC Hadeed
+    - Arabian Gulf Steel
+    - Al Ghurair Iron and Steel
+    - Muscat Steel
+    - Sharq Steel
+    - Kuwait Steel
+    - United Steel Bahrain
+    - Khouzestan Steel
+    - Esfahan Steel
+    - Tosyali Algerie
+    - Algerian Qatari Steel
+    - Al Jazeera Steel
+    - Emirates Steel Arkan
+    - Moon Iron and Steel
   green_steel_and_technology:
     - Stegra
     - HYBRIT
@@ -264,6 +371,14 @@ competitors:
     - SMS group
     - Metso
     - Boston Metal
+    - Vulcan Green Steel
+    - GravitHy
+    - Blastr Green Steel
+    - Hertha Metals
+    - Paul Wurth
+    - Energiron
+    - thyssenkrupp nucera
+    - Electra Steel
 
 # Industry websites searched directly every run (Google News "site:" search, headlines only;
 # paywalled articles stay behind their paywall, the radar only reads public headlines and snippets)
@@ -375,6 +490,55 @@ site_watch:
   - sms-group.com
   - metso.com
   - tenova.com
+  # more websites (Nov 2026)
+  - bnamericas.com
+  - theassay.com
+  - afr.com
+  - mining.com.au
+  - globalminingreview.com
+  - canadianminingjournal.com
+  - tradingeconomics.com
+  - investing.com
+  - marketscreener.com
+  - seekingalpha.com
+  - businesswire.com
+  - prnewswire.com
+  - globenewswire.com
+  - energyvoice.com
+  - offshore-energy.biz
+  - shippingtelegraph.com
+  - container-news.com
+  - aljazeera.com
+  - apnews.com
+  - bbc.com
+  - theguardian.com
+  - wsj.com
+  - asia.nikkei.com
+  - koreaherald.com
+  - businesskorea.co.kr
+  - japantimes.co.jp
+  - thestar.com.my
+  - vnexpress.net
+  - dawn.com
+  - dailynewsegypt.com
+  - ahram.org.eg
+  - hurriyetdailynews.com
+  - dailysabah.com
+  - tehrantimes.com
+  - kuwaittimes.com
+  - thepeninsulaqatar.com
+  - gulf-times.com
+  - mubasher.info
+  - oilprice.com
+  - h2-view.com
+  - hydrogenfuelnews.com
+  - steelnews.biz
+  - metalbulletin.com
+  - metal.com
+  - indianexpress.com
+  - timesofindia.indiatimes.com
+  - smh.com.au
+  - mining-review.com
 
 # Source credibility, used to verify each signal. Anything not listed is tier 3.
 source_tiers:
@@ -543,8 +707,53 @@ hormuz:
 feeds:
   - https://www.mining.com/feed/
   - https://www.hellenicshippingnews.com/feed/
+  - https://www.mining-technology.com/feed/
+  - https://www.australianmining.com.au/feed/
+  - https://www.northernminer.com/feed/
+  - https://www.miningmx.com/feed/
+  - https://agmetalminer.com/feed/
+  - https://gmk.center/en/feed/
+  - https://splash247.com/feed/
+  - https://gcaptain.com/feed/
+  - https://maritime-executive.com/articles.rss
+  - https://safety4sea.com/feed/
+  - https://www.freightwaves.com/news/feed
+  - https://www.marinelink.com/news/rss
+  - https://www.offshore-energy.biz/feed/
+  - https://www.energyvoice.com/feed/
+  - https://oilprice.com/rss/main
+  - https://www.hydrogenfuelnews.com/feed/
+  - https://www.carbonbrief.org/feed/
+  - https://globalenergymonitor.org/feed/
+  - https://eurometal.net/feed/
+  - https://container-news.com/feed/
+  - https://www.shippingtelegraph.com/feed/
+  - https://theassay.com/feed/
+  - https://stockhead.com.au/feed/
+  - https://www.mining.com.au/feed/
+  - https://www.canadianminingjournal.com/feed/
+  - https://gulfbusiness.com/feed/
+  - https://www.agbi.com/feed/
+  - https://www.arabianbusiness.com/feed
+  - https://www.seatrade-maritime.com/rss.xml
+  - https://www.steeltimesint.com/rss
+  - https://www.mining-journal.com/rss
+  - https://www.miningweekly.com/page/rss
+  - https://ieefa.org/rss.xml
+  - https://www.hydrogeninsight.com/rss
+  - https://www.rechargenews.com/rss
+  - https://www.metalminer.com/feed/
+  - https://www.zawya.com/sitemaps/en/rss
+  - https://www.tradearabia.com/rss/News_Business.xml
+  - https://www.thehindubusinessline.com/markets/commodities/feeder/default.rss
+  - https://economictimes.indiatimes.com/industry/indl-goods/svs/steel/rssfeeds/13358316.cms
+  - https://www.business-standard.com/rss/companies-101.rss
+  - https://www.livemint.com/rss/industry
 
 settings:
+  news_editions: ["US:en", "IN:en", "AU:en", "GB:en", "AE:en", "SG:en"]   # Google News editions searched daily
+  bing_news: true              # also search Bing News for every topic and competitor group
+  fetch_workers: 6             # parallel downloads
   lookback: 2d                 # Google News window per run
   llm_provider: anthropic      # anthropic | bedrock | none
   model: claude-sonnet-5       # analysis model (Anthropic API ID)
@@ -554,7 +763,7 @@ settings:
   aws_region: us-east-1
   batch_size: 10               # headlines per analysis call
   triage_batch_size: 40        # headlines per triage call
-  max_items_per_run: 500       # cost guard
+  max_items_per_run: 1500      # cost guard (keyword rules cost nothing; with AI ≈ $2 a run at this size)
   min_impact_for_brief: 5
   alert_impact: 8
   report_days: 7               # default dashboard window (days)

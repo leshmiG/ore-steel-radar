@@ -705,49 +705,30 @@ hormuz:
 
 # Extra RSS feeds (check each site's terms before automating)
 feeds:
-  - https://www.mining.com/feed/
   - https://www.hellenicshippingnews.com/feed/
   - https://www.mining-technology.com/feed/
-  - https://www.australianmining.com.au/feed/
   - https://www.northernminer.com/feed/
-  - https://www.miningmx.com/feed/
   - https://agmetalminer.com/feed/
   - https://gmk.center/en/feed/
   - https://splash247.com/feed/
   - https://gcaptain.com/feed/
   - https://maritime-executive.com/articles.rss
-  - https://safety4sea.com/feed/
   - https://www.freightwaves.com/news/feed
   - https://www.marinelink.com/news/rss
   - https://www.offshore-energy.biz/feed/
-  - https://www.energyvoice.com/feed/
   - https://oilprice.com/rss/main
   - https://www.hydrogenfuelnews.com/feed/
   - https://www.carbonbrief.org/feed/
-  - https://globalenergymonitor.org/feed/
   - https://eurometal.net/feed/
   - https://container-news.com/feed/
-  - https://www.shippingtelegraph.com/feed/
   - https://theassay.com/feed/
   - https://stockhead.com.au/feed/
   - https://www.mining.com.au/feed/
   - https://www.canadianminingjournal.com/feed/
-  - https://gulfbusiness.com/feed/
-  - https://www.agbi.com/feed/
-  - https://www.arabianbusiness.com/feed
   - https://www.seatrade-maritime.com/rss.xml
-  - https://www.steeltimesint.com/rss
-  - https://www.mining-journal.com/rss
-  - https://www.miningweekly.com/page/rss
   - https://ieefa.org/rss.xml
-  - https://www.hydrogeninsight.com/rss
-  - https://www.rechargenews.com/rss
   - https://www.metalminer.com/feed/
-  - https://www.zawya.com/sitemaps/en/rss
-  - https://www.tradearabia.com/rss/News_Business.xml
   - https://www.thehindubusinessline.com/markets/commodities/feeder/default.rss
-  - https://economictimes.indiatimes.com/industry/indl-goods/svs/steel/rssfeeds/13358316.cms
-  - https://www.business-standard.com/rss/companies-101.rss
   - https://www.livemint.com/rss/industry
 
 settings:

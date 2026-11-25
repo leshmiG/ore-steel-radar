@@ -811,7 +811,7 @@ def yahoo_closes(ticker, rng="6mo"):
            for t, c in zip(res["timestamp"], closes) if c is not None]
     if len(pts) < 2:
         raise ValueError("no prices")
-    return pts[-260:] if rng != "6mo" else pts[-130:]
+    return pts if rng != "6mo" else pts[-130:]
 
 
 def pct(a, b):
@@ -831,7 +831,10 @@ def fetch_markets(cfg):
         got = None
         for ticker in c.get("yahoo", []) or []:  # daily futures first: current prices, and Yahoo answers from GitHub runners
             try:
-                pts = yahoo_closes(ticker, rng="1y")
+                pts = yahoo_closes(ticker, rng="2y")
+                age = (dt.date.today() - dt.date.fromisoformat(pts[-1][0])).days
+                if age > 10:  # expired or delisted contract: try the next ticker
+                    raise ValueError(f"last price is {age} days old")
                 got = {**c, "source": f"Yahoo Finance {ticker}", "unit": c.get("yahoo_unit", c.get("unit")),
                        "note": c.get("yahoo_note", "Daily futures"), "freq": "daily", "points": pts}
                 break
@@ -857,8 +860,9 @@ def fetch_markets(cfg):
             continue
         pts = got["points"]
         back = 252 if got["freq"] == "daily" else 12
-        out["commodities"].append({**got, "latest": pts[-1][1], "date": pts[-1][0], "change_pct": pct(pts[-1][1], pts[-2][1]),
-                                   "yoy_pct": pct(pts[-1][1], pts[-1 - back][1]) if len(pts) > back else None})
+        yoy = pct(pts[-1][1], pts[-1 - back][1]) if len(pts) > back else None
+        out["commodities"].append({**got, "points": pts[-260:] if got["freq"] == "daily" else pts[-36:], "latest": pts[-1][1],
+                                   "date": pts[-1][0], "change_pct": pct(pts[-1][1], pts[-2][1]), "yoy_pct": yoy})
     for e in m.get("equities", []):
         try:
             try:

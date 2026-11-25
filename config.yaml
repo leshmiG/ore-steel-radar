@@ -666,7 +666,7 @@ source_tiers:
 markets:
   commodities:      # daily futures from Yahoo Finance first; IMF/BLS monthly series from FRED as fallback
     - {id: PIORECRUSDM, name: Iron ore, unit: "$/t", note: "Global price, monthly (IMF)", yahoo: ["TIO=F"], yahoo_unit: "$/t", yahoo_note: "62% Fe CFR China, daily futures (CME/SGX)"}
-    - {id: PCOALAUUSDM, name: Coal, unit: "$/t", note: "Australia, monthly (IMF)", yahoo: ["NCF=F", "MTF=F"], yahoo_unit: "$/t", yahoo_note: "Thermal coal, daily futures"}
+    - {id: PCOALAUUSDM, name: Coal, unit: "$/t", note: "Australia, monthly (IMF)"}
     - {id: PNGASEUUSDM, name: Natural gas (Europe), unit: "$/MMBtu", note: "Monthly (IMF)", yahoo: ["TTF=F"], yahoo_unit: "€/MWh", yahoo_note: "Dutch TTF, daily futures"}
     - {id: WPU101, name: Steel (US HRC), unit: "index", note: "Iron & steel producer price index, monthly (BLS)", yahoo: ["HRC=F"], yahoo_unit: "$/st", yahoo_note: "US Midwest hot-rolled coil, daily futures"}
     - {id: DCOILBRENTEU, name: Brent crude, unit: "$/bbl", note: "Daily (EIA)", yahoo: ["BZ=F"], yahoo_unit: "$/bbl", yahoo_note: "Brent, daily futures (ICE)"}

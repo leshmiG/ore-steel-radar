@@ -777,6 +777,7 @@ def load_hormuz():
 
 
 # ---------------------------------------------------------------- market data
+FRED_API = "https://api.stlouisfed.org/fred/series/observations?series_id={id}&api_key={key}&file_type=json"
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
 STOOQ_CSV = "https://stooq.com/q/d/l/?s={symbol}&i=d"
 
@@ -801,16 +802,16 @@ def fetch_csv(url, timeout=60):
     return rows
 
 
-def yahoo_closes(ticker):
-    """Daily closes for the last 6 months from Yahoo Finance's chart data (fallback when Stooq has no CSV)."""
-    data = json.loads(fetch_text(f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=6mo&interval=1d"))
+def yahoo_closes(ticker, rng="6mo"):
+    """Daily closes from Yahoo Finance's chart data (shares fallback; commodity futures)."""
+    data = json.loads(fetch_text(f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ticker)}?range={rng}&interval=1d"))
     res = data["chart"]["result"][0]
     closes = res["indicators"]["quote"][0]["close"]
     pts = [[dt.datetime.fromtimestamp(t, dt.timezone.utc).date().isoformat(), round(c, 4)]
            for t, c in zip(res["timestamp"], closes) if c is not None]
     if len(pts) < 2:
         raise ValueError("no prices")
-    return pts[-130:]
+    return pts[-260:] if rng != "6mo" else pts[-130:]
 
 
 def pct(a, b):
@@ -827,19 +828,37 @@ def fetch_markets(cfg):
     out = {"fetched": now_iso(), "commodities": [], "equities": []}
     m = cfg.get("markets", {})
     for c in m.get("commodities", []):
-        try:
-            rows = fetch_csv(FRED_CSV.format(id=c["id"]))
-            pts = [[r[0], float(r[1])] for r in rows[1:] if len(r) > 1 and r[1] not in ("", ".")]
-            daily = len(pts) > 1 and (dt.date.fromisoformat(pts[-1][0]) - dt.date.fromisoformat(pts[-2][0])).days < 7
-            pts = pts[-260:] if daily else pts[-36:]
-            back = 252 if daily else 12
-            out["commodities"].append({**c, "freq": "daily" if daily else "monthly", "points": pts, "latest": pts[-1][1],
-                                       "date": pts[-1][0], "change_pct": pct(pts[-1][1], pts[-2][1]),
-                                       "yoy_pct": pct(pts[-1][1], pts[-1 - back][1]) if len(pts) > back else None})
-        except Exception as exc:
-            print(f"markets: {c['id']} unavailable ({exc})")
+        got = None
+        for ticker in c.get("yahoo", []) or []:  # daily futures first: current prices, and Yahoo answers from GitHub runners
+            try:
+                pts = yahoo_closes(ticker, rng="1y")
+                got = {**c, "source": f"Yahoo Finance {ticker}", "unit": c.get("yahoo_unit", c.get("unit")),
+                       "note": c.get("yahoo_note", "Daily futures"), "freq": "daily", "points": pts}
+                break
+            except Exception as exc:
+                print(f"markets: {c['id']} via {ticker} unavailable ({exc})")
+        if got is None:
+            for url in ([FRED_API.format(id=c["id"], key=os.environ["FRED_API_KEY"])] if os.getenv("FRED_API_KEY") else []) + [FRED_CSV.format(id=c["id"])]:
+                try:
+                    if "api_key=" in url:
+                        obs = json.loads(fetch_text(url, timeout=60))["observations"]
+                        pts = [[o["date"], float(o["value"])] for o in obs if o["value"] not in ("", ".")]
+                    else:
+                        rows = fetch_csv(url)
+                        pts = [[r[0], float(r[1])] for r in rows[1:] if len(r) > 1 and r[1] not in ("", ".")]
+                    daily = len(pts) > 1 and (dt.date.fromisoformat(pts[-1][0]) - dt.date.fromisoformat(pts[-2][0])).days < 7
+                    got = {**c, "source": "FRED", "freq": "daily" if daily else "monthly", "points": pts[-260:] if daily else pts[-36:]}
+                    break
+                except Exception as exc:
+                    print(f"markets: {c['id']} from FRED unavailable ({exc})")
+        if got is None:
             if c["id"] in old_c:
                 out["commodities"].append(old_c[c["id"]])
+            continue
+        pts = got["points"]
+        back = 252 if got["freq"] == "daily" else 12
+        out["commodities"].append({**got, "latest": pts[-1][1], "date": pts[-1][0], "change_pct": pct(pts[-1][1], pts[-2][1]),
+                                   "yoy_pct": pct(pts[-1][1], pts[-1 - back][1]) if len(pts) > back else None})
     for e in m.get("equities", []):
         try:
             try:

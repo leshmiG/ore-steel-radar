@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "17 2 * * *"   # 02:17 UTC = 05:17 Bahrain; GitHub often starts scheduled runs late, so this aims early
   workflow_dispatch:        # "Run workflow" button for a manual run
+    inputs:
+      command:
+        description: "run = full update; markets = refresh prices and Hormuz only"
+        type: choice
+        options: [run, markets]
+        default: run
 
 permissions:
   contents: write           # lets the job commit the database and dashboard
@@ -33,7 +39,13 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RADAR_COMPANY_PROFILE: ${{ secrets.RADAR_COMPANY_PROFILE }}
-        run: python radar.py run
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          if [ "${{ inputs.command }}" = "markets" ]; then
+            python radar.py markets && python radar.py report
+          else
+            python radar.py run
+          fi
 
       - name: Save results
         run: |

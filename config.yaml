@@ -664,12 +664,12 @@ source_tiers:
 
 # Market data (free, no API key). Fetched each run; the dashboard hides the panel if a source is unavailable.
 markets:
-  commodities:      # FRED CSV series (IMF and BLS data)
-    - {id: PIORECRUSDM, name: Iron ore, unit: "$/t", note: "Global price, monthly (IMF)"}
-    - {id: PCOALAUUSDM, name: Coal (Australia), unit: "$/t", note: "Monthly (IMF)"}
-    - {id: PNGASEUUSDM, name: Natural gas (Europe), unit: "$/MMBtu", note: "Monthly (IMF)"}
-    - {id: WPU101, name: US iron & steel PPI, unit: "index", note: "Producer price index, monthly (BLS)"}
-    - {id: DCOILBRENTEU, name: Brent crude, unit: "$/bbl", note: "Daily (EIA)"}
+  commodities:      # daily futures from Yahoo Finance first; IMF/BLS monthly series from FRED as fallback
+    - {id: PIORECRUSDM, name: Iron ore, unit: "$/t", note: "Global price, monthly (IMF)", yahoo: ["TIO=F"], yahoo_unit: "$/t", yahoo_note: "62% Fe CFR China, daily futures (CME/SGX)"}
+    - {id: PCOALAUUSDM, name: Coal, unit: "$/t", note: "Australia, monthly (IMF)", yahoo: ["MTF=F", "NCF=F"], yahoo_unit: "$/t", yahoo_note: "Thermal coal, daily futures"}
+    - {id: PNGASEUUSDM, name: Natural gas (Europe), unit: "$/MMBtu", note: "Monthly (IMF)", yahoo: ["TTF=F"], yahoo_unit: "€/MWh", yahoo_note: "Dutch TTF, daily futures"}
+    - {id: WPU101, name: Steel (US HRC), unit: "index", note: "Iron & steel producer price index, monthly (BLS)", yahoo: ["HRC=F"], yahoo_unit: "$/st", yahoo_note: "US Midwest hot-rolled coil, daily futures"}
+    - {id: DCOILBRENTEU, name: Brent crude, unit: "$/bbl", note: "Daily (EIA)", yahoo: ["BZ=F"], yahoo_unit: "$/bbl", yahoo_note: "Brent, daily futures (ICE)"}
   equities:         # Stooq daily closes, US listings
     - {symbol: vale.us, name: Vale}
     - {symbol: rio.us, name: Rio Tinto}

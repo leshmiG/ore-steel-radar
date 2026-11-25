@@ -906,8 +906,8 @@ function renderBrief30(){
   const ore = com("PIORECRUSDM"), brent = com("DCOILBRENTEU");
   const p = ALL.filter(x => inRange(x) && matchCo(x));
   const tiles = [];
-  if (last(ore) != null) tiles.push(["", `$${last(ore).toFixed(0)}`, `Iron ore /t · monthly ${dtxt(delta(ore))}`]);
-  if (last(brent) != null) tiles.push(["", `$${last(brent).toFixed(0)}`, `Brent /bbl · daily ${dtxt(delta(brent))}`]);
+  if (last(ore) != null) tiles.push(["", `$${last(ore).toFixed(0)}`, `Iron ore ${esc(ore.unit || "")} · ${ore.freq || ""} ${dtxt(delta(ore))}`]);
+  if (last(brent) != null) tiles.push(["", `$${last(brent).toFixed(0)}`, `Brent ${esc(brent.unit || "")} · ${brent.freq || ""} ${dtxt(delta(brent))}`]);
   if (h.pct_of_baseline != null) tiles.push([h.pct_of_baseline < 50 ? "alert" : "", `${h.pct_of_baseline}%`, "Hormuz vs normal"]);
   tiles.push([p.some(x => x.impact >= 8) ? "alert" : "", p.filter(x => x.impact >= 7).length, "High-impact signals"]);
   document.getElementById("pulse").innerHTML = tiles.map(([c, v, l]) => `<div class="pv ${c}"><b>${v}</b><span>${l}</span></div>`).join("");
